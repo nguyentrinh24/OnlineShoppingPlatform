@@ -37,7 +37,7 @@ export class AdminComponent implements OnInit {
   ngOnInit() {
     this.userResponse = this.userService.getUserResponseFromLocalStorage();
     // Default router
-    debugger
+    //debugger
     if (this.router.url === '/admin') {
       this.router.navigate(['/admin/orders']);
     }

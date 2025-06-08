@@ -55,11 +55,11 @@ export class HomeComponent implements OnInit {
   getCategories(page: number, limit: number) {
     this.categoryService.getCategories(page, limit).subscribe({
       next: (categories: Category[]) => {
-        debugger;
+        //debugger;
         this.categories = categories;
       },
       complete: () => {
-        debugger;
+        //debugger;
       },
       error: (error: any) => {
         console.error('Error fetching categories:', error);
@@ -70,15 +70,15 @@ export class HomeComponent implements OnInit {
   searchProducts() {
     this.currentPage = 0;
     this.itemsPerPage = 12;
-    debugger;
+    //debugger;
     this.getProducts(this.keyword, this.selectedCategoryId, this.currentPage, this.itemsPerPage);
   }
 
   getProducts(keyword: string, selectedCategoryId: number, page: number, limit: number) {
-    debugger;
+    //debugger;
     this.productService.getProducts(keyword, selectedCategoryId, page, limit).subscribe({
       next: (response: any) => {
-        debugger;
+        //debugger;
         response.products.forEach((product: Product) => {
           product.url = `${environment.apiBaseUrl}/products/images/${product.thumbnail}`;
         });
@@ -87,17 +87,17 @@ export class HomeComponent implements OnInit {
         this.visiblePages = this.generateVisiblePageArray(this.currentPage, this.totalPages);
       },
       complete: () => {
-        debugger;
+        //debugger;
       },
       error: (error: any) => {
-        debugger;
+        //debugger;
         console.error('Error fetching products:', error);
       }
     });
   }
 
   onPageChange(page: number) {
-    debugger;
+    //debugger;
     this.currentPage = page < 0 ? 0 : page;
     this.localStorage?.setItem('currentProductPage', String(this.currentPage));
     this.getProducts(this.keyword, this.selectedCategoryId, this.currentPage, this.itemsPerPage);
@@ -120,7 +120,7 @@ export class HomeComponent implements OnInit {
 
   // Hàm xử lý sự kiện khi sản phẩm được bấm vào
   onProductClick(productId: number) {
-    debugger;
+    //debugger;
     // Điều hướng đến trang detail-product với productId là tham số
     this.router.navigate(['/products', productId]);
   }

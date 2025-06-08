@@ -7,34 +7,37 @@ import { UserResponse } from '../../responses/user/user.response';
 
 import { CommonModule } from '@angular/common';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { RouterModule } from '@angular/router';  
+import { RouterModule } from '@angular/router';
+import { OrderService } from '../../services/order.service';
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
   standalone: true,
-  imports: [    
+  imports: [
     CommonModule,
     NgbModule,
     RouterModule
   ]
 })
-export class HeaderComponent implements OnInit{
-  userResponse?:UserResponse | null;
+export class HeaderComponent implements OnInit {
+  userResponse?: UserResponse | null;
   isPopoverOpen = false;
   activeNavItem: number = 0;
 
+
   constructor(
-    private userService: UserService,       
-    private tokenService: TokenService,    
+    private userService: UserService,
+    private tokenService: TokenService,
     private router: Router,
+    private orderService: OrderService
   ) {
-    
-   }
+
+  }
   ngOnInit() {
-    this.userResponse = this.userService.getUserResponseFromLocalStorage();    
-  }  
+    this.userResponse = this.userService.getUserResponseFromLocalStorage();
+  }
 
   togglePopover(event: Event): void {
     event.preventDefault();
@@ -42,21 +45,27 @@ export class HeaderComponent implements OnInit{
   }
 
   handleItemClick(index: number): void {
-    //alert(`Clicked on "${index}"`);
-    if(index === 0) {
-      debugger
-      this.router.navigate(['/user-profile']);                      
+    if (index === 0) {
+      this.router.navigate(['/user-profile']);
+    } else if (index === 1) {
+      const orderId = this.orderService.latestOrderId;
+      if (orderId) {
+        this.router.navigate(['/orders', orderId]);
+      } else {
+        console.error('Không có đơn hàng nào được lưu.');
+      }
     } else if (index === 2) {
       this.userService.removeUserFromLocalStorage();
       this.tokenService.removeToken();
-      this.userResponse = this.userService.getUserResponseFromLocalStorage();    
+      this.userResponse = this.userService.getUserResponseFromLocalStorage();
     }
-    this.isPopoverOpen = false; // Close the popover after clicking an item    
+    this.isPopoverOpen = false;
   }
 
-  
-  setActiveNavItem(index: number) {    
+
+
+  setActiveNavItem(index: number) {
     this.activeNavItem = index;
     //alert(this.activeNavItem);
-  }  
+  }
 }

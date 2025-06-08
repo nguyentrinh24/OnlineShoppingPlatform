@@ -43,7 +43,7 @@ export class ProductService {
   }
   updateProduct(productId: number, updatedProduct: UpdateProductDTO): Observable<UpdateProductDTO> {
     return this.http.put<Product>(`${this.apiBaseUrl}/products/${productId}`, updatedProduct);
-  }  
+  }
   insertProduct(insertProductDTO: InsertProductDTO): Observable<any> {
     // Add a new product
     return this.http.post(`${this.apiBaseUrl}/products`, insertProductDTO);

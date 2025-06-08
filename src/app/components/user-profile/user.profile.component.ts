@@ -1,10 +1,10 @@
 import { Component, ViewChild, OnInit } from '@angular/core';
-import { 
-  FormBuilder, 
-  FormGroup, 
+import {
+  FormBuilder,
+  FormGroup,
   Validators,
-  ValidationErrors, 
-  ValidatorFn, 
+  ValidationErrors,
+  ValidatorFn,
   AbstractControl
 } from '@angular/forms';
 
@@ -29,58 +29,68 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
     FooterComponent,
     HeaderComponent,
     CommonModule,
-    FormsModule, 
-    ReactiveFormsModule,   
+    FormsModule,
+    ReactiveFormsModule,
   ],
 })
 export class UserProfileComponent implements OnInit {
   userResponse?: UserResponse;
   userProfileForm: FormGroup;
-  token:string = '';
+  token: string | null = '';
+
   constructor(
     private formBuilder: FormBuilder,
     private activatedRoute: ActivatedRoute,
     private userService: UserService,
     private router: Router,
     private tokenService: TokenService,
-  ){        
+  ) {
     this.userProfileForm = this.formBuilder.group({
-      fullname: [''],     
-      address: ['', [Validators.minLength(3)]],       
-      password: ['', [Validators.minLength(3)]], 
-      retype_password: ['', [Validators.minLength(3)]], 
-      date_of_birth: [Date.now()],      
+      fullname: [''],
+      address: ['', [Validators.minLength(3)]],
+      password: ['', [Validators.minLength(3)]],
+      retype_password: ['', [Validators.minLength(3)]],
+      date_of_birth: [Date.now()],
     }, {
       validators: this.passwordMatchValidator// Custom validator function for password match
     });
   }
-  
-  ngOnInit(): void {  
-    debugger
+  ngOnInit(): void {
+    throw new Error('Method not implemented.');
+  }
+
+  nngOnInit(): void {
     this.token = this.tokenService.getToken();
+
+    if (!this.token) {
+      alert('Không tìm thấy token, vui lòng đăng nhập lại.');
+      this.router.navigate(['/login']);
+      return;
+    }
+
     this.userService.getUserDetail(this.token).subscribe({
       next: (response: any) => {
-        debugger
-        this.userResponse = {
+        const user: UserResponse = {
           ...response,
           date_of_birth: new Date(response.date_of_birth),
-        };    
+        };
+        this.userResponse = user;
+
         this.userProfileForm.patchValue({
-          fullname: this.userResponse?.fullname ?? '',
-          address: this.userResponse?.address ?? '',
-          date_of_birth: this.userResponse?.date_of_birth.toISOString().substring(0, 10),
-        });        
-        this.userService.saveUserResponseToLocalStorage(this.userResponse);         
-      },
-      complete: () => {
-        debugger;
+          fullname: user.fullname,
+          address: user.address,
+          date_of_birth: user.date_of_birth.toISOString().substring(0, 10),
+        });
+
+        this.userService.saveUserResponseToLocalStorage(user);
       },
       error: (error: any) => {
-        debugger;
         alert(error.error.message);
       }
-    })
+    });
   }
+
+
   passwordMatchValidator(): ValidatorFn {
     return (formGroup: AbstractControl): ValidationErrors | null => {
       const password = formGroup.get('password')?.value;
@@ -88,12 +98,17 @@ export class UserProfileComponent implements OnInit {
       if (password !== retypedPassword) {
         return { passwordMismatch: true };
       }
-  
+
       return null;
     };
   }
   save(): void {
-    debugger
+    if (!this.token) {
+      alert('Không tìm thấy token. Vui lòng đăng nhập lại.');
+      this.router.navigate(['/login']);
+      return;
+    }
+
     if (this.userProfileForm.valid) {
       const updateUserDTO: UpdateUserDTO = {
         fullname: this.userProfileForm.get('fullname')?.value,
@@ -102,7 +117,7 @@ export class UserProfileComponent implements OnInit {
         retype_password: this.userProfileForm.get('retype_password')?.value,
         date_of_birth: this.userProfileForm.get('date_of_birth')?.value
       };
-  
+
       this.userService.updateUserDetail(this.token, updateUserDTO)
         .subscribe({
           next: (response: any) => {
@@ -115,10 +130,11 @@ export class UserProfileComponent implements OnInit {
           }
         });
     } else {
-      if (this.userProfileForm.hasError('passwordMismatch')) {        
-        alert('Mật khẩu và mật khẩu gõ lại chưa chính xác')
+      if (this.userProfileForm.hasError('passwordMismatch')) {
+        alert('Mật khẩu và mật khẩu gõ lại chưa chính xác');
       }
     }
-  }    
+  }
+
 }
 

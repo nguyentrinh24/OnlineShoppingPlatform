@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './insert.product.admin.component.html',
   styleUrls: ['./insert.product.admin.component.scss'],
   standalone: true,
-  imports: [   
+  imports: [
     CommonModule,
     FormsModule,
   ]
@@ -27,25 +27,25 @@ export class InsertProductAdminComponent implements OnInit {
     images: []
   };
   categories: Category[] = []; // Dữ liệu động từ categoryService
-  constructor(    
+  constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private categoryService: CategoryService,    
-    private productService: ProductService,    
+    private categoryService: CategoryService,
+    private productService: ProductService,
   ) {
-    
-  } 
+
+  }
   ngOnInit() {
     this.getCategories(1, 100)
-  } 
+  }
   getCategories(page: number, limit: number) {
     this.categoryService.getCategories(page, limit).subscribe({
       next: (categories: Category[]) => {
-        debugger
+        //debugger
         this.categories = categories;
       },
       complete: () => {
-        debugger;
+        //debugger;
       },
       error: (error: any) => {
         console.error('Error fetching categories:', error);
@@ -64,15 +64,15 @@ export class InsertProductAdminComponent implements OnInit {
     this.insertProductDTO.images = files;
   }
 
-  insertProduct() {    
+  insertProduct() {
     this.productService.insertProduct(this.insertProductDTO).subscribe({
       next: (response) => {
-        debugger
+        //debugger
         if (this.insertProductDTO.images.length > 0) {
           const productId = response.id; // Assuming the response contains the newly created product's ID
           this.productService.uploadImages(productId, this.insertProductDTO.images).subscribe({
             next: (imageResponse) => {
-              debugger
+              //debugger
               // Handle the uploaded images response if needed              
               console.log('Images uploaded successfully:', imageResponse);
               // Navigate back to the previous page
@@ -83,15 +83,15 @@ export class InsertProductAdminComponent implements OnInit {
               alert(error.error)
               console.error('Error uploading images:', error);
             }
-          })          
+          })
         }
       },
       error: (error) => {
-        debugger
+        //debugger
         // Handle error while inserting the product
         alert(error.error)
         console.error('Error inserting product:', error);
       }
-    });    
+    });
   }
 }

@@ -16,7 +16,7 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './update.product.admin.component.html',
   styleUrls: ['./update.product.admin.component.scss'],
   standalone: true,
-  imports: [   
+  imports: [
     CommonModule,
     FormsModule,
   ]
@@ -34,12 +34,12 @@ export class UpdateProductAdminComponent implements OnInit {
     private productService: ProductService,
     private route: ActivatedRoute,
     private router: Router,
-    private categoryService: CategoryService,    
+    private categoryService: CategoryService,
     private location: Location,
   ) {
     this.productId = 0;
     this.product = {} as Product;
-    this.updatedProduct = {} as Product;  
+    this.updatedProduct = {} as Product;
   }
 
   ngOnInit(): void {
@@ -67,18 +67,18 @@ export class UpdateProductAdminComponent implements OnInit {
     this.productService.getDetailProduct(this.productId).subscribe({
       next: (product: Product) => {
         this.product = product;
-        this.updatedProduct = { ...product };                
-        this.updatedProduct.product_images.forEach((product_image:ProductImage) => {
+        this.updatedProduct = { ...product };
+        this.updatedProduct.product_images.forEach((product_image: ProductImage) => {
           product_image.image_url = `${environment.apiBaseUrl}/products/images/${product_image.image_url}`;
         });
       },
       complete: () => {
-        
+
       },
       error: (error: any) => {
-        
+
       }
-    });     
+    });
   }
   updateProduct() {
     // Implement your update logic here
@@ -89,29 +89,29 @@ export class UpdateProductAdminComponent implements OnInit {
       category_id: this.updatedProduct.category_id
     };
     this.productService.updateProduct(this.product.id, updateProductDTO).subscribe({
-      next: (response: any) => {  
-        debugger        
+      next: (response: any) => {
+        debugger
       },
       complete: () => {
         debugger;
-        this.router.navigate(['/admin/products']);        
+        this.router.navigate(['/admin/products']);
       },
       error: (error: any) => {
         debugger;
         console.error('Error fetching products:', error);
       }
-    });  
+    });
   }
   showImage(index: number): void {
     debugger
-    if (this.product && this.product.product_images && 
-        this.product.product_images.length > 0) {
+    if (this.product && this.product.product_images &&
+      this.product.product_images.length > 0) {
       // Đảm bảo index nằm trong khoảng hợp lệ        
       if (index < 0) {
         index = 0;
       } else if (index >= this.product.product_images.length) {
         index = this.product.product_images.length - 1;
-      }        
+      }
       // Gán index hiện tại và cập nhật ảnh hiển thị
       this.currentImageIndex = index;
     }
@@ -120,7 +120,7 @@ export class UpdateProductAdminComponent implements OnInit {
     debugger
     // Gọi khi một thumbnail được bấm
     this.currentImageIndex = index; // Cập nhật currentImageIndex
-  }  
+  }
   nextImage(): void {
     debugger
     this.showImage(this.currentImageIndex + 1);
@@ -129,7 +129,7 @@ export class UpdateProductAdminComponent implements OnInit {
   previousImage(): void {
     debugger
     this.showImage(this.currentImageIndex - 1);
-  }  
+  }
   onFileChange(event: any) {
     // Retrieve selected files from input element
     const files = event.target.files;
@@ -145,9 +145,9 @@ export class UpdateProductAdminComponent implements OnInit {
         debugger
         // Handle the uploaded images response if needed              
         console.log('Images uploaded successfully:', imageResponse);
-        this.images = [];       
+        this.images = [];
         // Reload product details to reflect the new images
-        this.getProductDetails(); 
+        this.getProductDetails();
       },
       error: (error) => {
         // Handle the error while uploading images
@@ -160,15 +160,15 @@ export class UpdateProductAdminComponent implements OnInit {
     if (confirm('Are you sure you want to remove this image?')) {
       // Call the removeImage() method to remove the image   
       this.productService.deleteProductImage(productImage.id).subscribe({
-        next:(productImage: ProductImage) => {
-          location.reload();          
-        },        
+        next: (productImage: ProductImage) => {
+          location.reload();
+        },
         error: (error) => {
           // Handle the error while uploading images
           alert(error.error)
           console.error('Error deleting images:', error);
         }
       });
-    }   
+    }
   }
 }

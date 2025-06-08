@@ -55,24 +55,24 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     // Gọi API lấy danh sách roles và lưu vào biến roles
-    debugger
+    //debugger
     this.roleService.getRoles().subscribe({
       next: (roles: Role[]) => { // Sử dụng kiểu Role[]
-        debugger
+        //debugger
         this.roles = roles;
         this.selectedRole = roles.length > 0 ? roles[0] : undefined;
       },
       complete: () => {
-        debugger
+        //debugger
       },
       error: (error: any) => {
-        debugger
+        //debugger
         console.error('Error getting roles:', error);
       }
     });
   }
   createAccount() {
-    debugger
+    //debugger
     // Chuyển hướng người dùng đến trang đăng ký (hoặc trang tạo tài khoản)
     this.router.navigate(['/register']);
   }
@@ -80,7 +80,7 @@ export class LoginComponent implements OnInit {
     const message = `phone: ${this.phoneNumber}` +
       `password: ${this.password}`;
     //alert(message);
-    debugger
+    //debugger
 
     const loginDTO: LoginDTO = {
       phone_number: this.phoneNumber,
@@ -89,14 +89,14 @@ export class LoginComponent implements OnInit {
     };
     this.userService.login(loginDTO).subscribe({
       next: (response: LoginResponse) => {
-        debugger;
+        //debugger;
         const { token } = response;
         if (this.rememberMe) {
           this.tokenService.setToken(token);
-          debugger;
+          //debugger;
           this.userService.getUserDetail(token).subscribe({
             next: (response: any) => {
-              debugger
+              //debugger
               this.userResponse = {
                 ...response,
                 date_of_birth: new Date(response.date_of_birth),
@@ -111,20 +111,20 @@ export class LoginComponent implements OnInit {
             },
             complete: () => {
               this.cartService.refreshCart();
-              debugger;
+              //debugger;
             },
             error: (error: any) => {
-              debugger;
+              //debugger;
               alert(error.error.message);
             }
           })
         }
       },
       complete: () => {
-        debugger;
+        //debugger;
       },
       error: (error: any) => {
-        debugger;
+        //debugger;
         alert(error.error.message);
       }
     });

@@ -23,7 +23,7 @@ export class AdminGuard {
     const isUserIdValid = this.tokenService.getUserId() > 0;
     this.userResponse = this.userService.getUserResponseFromLocalStorage();
     const isAdmin = this.userResponse?.role.name.toLowerCase() == 'admin';
-    debugger
+    //debugger
     if (!isTokenExpired && isUserIdValid && isAdmin) {
       return true;
     } else {
@@ -38,6 +38,6 @@ export const AdminGuardFn: CanActivateFn = (
   next: ActivatedRouteSnapshot,
   state: RouterStateSnapshot
 ): boolean => {
-  debugger
+  //debugger
   return inject(AdminGuard).canActivate(next, state);
 }
