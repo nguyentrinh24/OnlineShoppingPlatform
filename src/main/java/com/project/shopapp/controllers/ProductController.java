@@ -1,15 +1,16 @@
 package com.project.shopapp.controllers;
 
-import com.github.javafaker.Faker;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.project.shopapp.Producers.MessageProducer;
 import com.project.shopapp.components.LocalizationUtils;
 import com.project.shopapp.dtos.*;
 import com.project.shopapp.models.Product;
 import com.project.shopapp.models.ProductImage;
 import com.project.shopapp.responses.ProductListResponse;
 import com.project.shopapp.responses.ProductResponse;
-import com.project.shopapp.services.IProductService;
+import com.project.shopapp.services.Product.IProductRedisService;
+import com.project.shopapp.services.Product.IProductService;
 import com.project.shopapp.utils.MessageKeys;
-import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,14 +21,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -43,6 +42,10 @@ public class ProductController {
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
     private final IProductService productService;
     private final LocalizationUtils localizationUtils;
+    private final MessageProducer messageProducer;
+    private final IProductRedisService productRedisService;
+
+
 
     @PostMapping("")
     //POST http://localhost:8088/v1/api/products
@@ -59,6 +62,8 @@ public class ProductController {
                 return ResponseEntity.badRequest().body(errorMessages);
             }
             Product newProduct = productService.createProduct(productDTO);
+            logRabbit("Created product: " + newProduct.getName());
+
             return ResponseEntity.ok(newProduct);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -113,6 +118,7 @@ public class ProductController {
                             .categoryId(existingProduct.getCategory().getId())
                             .build();
                     productService.updateProduct(existingProduct.getId(), productDTO);
+
                 }
 
             }
@@ -164,31 +170,53 @@ public class ProductController {
         String contentType = file.getContentType();
         return contentType != null && contentType.startsWith("image/");
     }
+
+
     @GetMapping("")
     public ResponseEntity<ProductListResponse> getProducts(
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "0", name = "category_id") Long categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit
-    ) {
+    ) throws JsonProcessingException {
         // Tạo Pageable từ thông tin trang và giới hạn
         PageRequest pageRequest = PageRequest.of(
                 page, limit,
-                //Sort.by("createdAt").descending()
                 Sort.by("id").ascending()
         );
-        logger.info(String.format("keyword = %s, category_id = %d, page = %d, limit = %d",
-                keyword, categoryId, page, limit));
-        Page<ProductResponse> productPage = productService.getAllProducts(keyword, categoryId, pageRequest);
-        // Lấy tổng số trang
-        int totalPages = productPage.getTotalPages();
-        List<ProductResponse> products = productPage.getContent();
-        return ResponseEntity.ok(ProductListResponse
-                        .builder()
-                        .products(products)
-                        .totalPages(totalPages)
-                        .build());
+        logger.info("keyword = {}, category_id = {}, page = {}, limit = {}",
+                keyword, categoryId, page, limit);
+
+        // 1. Thử lấy từ Redis cache
+        List<ProductResponse> products = productRedisService.getAllProducts(keyword, categoryId, pageRequest);
+
+        // 2. Nếu cache miss, gọi service DB và lưu lại vào Redis
+        int totalPages;
+        if (products != null) {
+            logger.info("Cache hit for key all_products:{}:{}:{}:{}:*", keyword, categoryId, page, limit);
+            // Lấy tổng số trang vẫn phải gọi service để biết totalPages
+            Page<ProductResponse> pageInfo = productService.getAllProducts(keyword, categoryId, pageRequest);
+            totalPages = pageInfo.getTotalPages();
+        } else {
+            logger.info("Cache miss: fetching from DB");
+            Page<ProductResponse> pageResult = productService.getAllProducts(keyword, categoryId, pageRequest);
+            products = pageResult.getContent();
+            totalPages = pageResult.getTotalPages();
+
+            // Lưu vào Redis để lần sau dùng
+            productRedisService.saveAllProducts(products, keyword, categoryId, pageRequest);
+        }
+
+        // 3. Trả về response
+        ProductListResponse response = ProductListResponse.builder()
+                .products(products)
+                .totalPages(totalPages)
+                .build();
+
+        return ResponseEntity.ok(response);
     }
+
+
     //http://localhost:8088/api/v1/products/6
     @GetMapping("/{id}")
     public ResponseEntity<?> getProductById(
@@ -221,34 +249,36 @@ public class ProductController {
     public ResponseEntity<String> deleteProduct(@PathVariable long id) {
         try {
             productService.deleteProduct(id);
+            logRabbit("Deleted product ID: " + id);
+
             return ResponseEntity.ok(String.format("Product with id = %d deleted successfully", id));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
     //@PostMapping("/generateFakeProducts")
-    private ResponseEntity<String> generateFakeProducts() {
-        Faker faker = new Faker();
-        for (int i = 0; i < 1_000_000; i++) {
-            String productName = faker.commerce().productName();
-            if(productService.existsByName(productName)) {
-                continue;
-            }
-            ProductDTO productDTO = ProductDTO.builder()
-                    .name(productName)
-                    .price((float)faker.number().numberBetween(10, 90_000_000))
-                    .description(faker.lorem().sentence())
-                    .thumbnail("")
-                    .categoryId((long)faker.number().numberBetween(2, 5))
-                    .build();
-            try {
-                productService.createProduct(productDTO);
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body(e.getMessage());
-            }
-        }
-        return ResponseEntity.ok("Fake Products created successfully");
-    }
+//    private ResponseEntity<String> generateFakeProducts() {
+//        Faker faker = new Faker();
+//        for (int i = 0; i < 1_000_000; i++) {
+//            String productName = faker.commerce().productName();
+//            if(productService.existsByName(productName)) {
+//                continue;
+//            }
+//            ProductDTO productDTO = ProductDTO.builder()
+//                    .name(productName)
+//                    .price((float)faker.number().numberBetween(10, 90_000_000))
+//                    .description(faker.lorem().sentence())
+//                    .thumbnail("")
+//                    .categoryId((long)faker.number().numberBetween(2, 5))
+//                    .build();
+//            try {
+//                productService.createProduct(productDTO);
+//            } catch (Exception e) {
+//                return ResponseEntity.badRequest().body(e.getMessage());
+//            }
+//        }
+//        return ResponseEntity.ok("Fake Products created successfully");
+//    }
     //update a product
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(
@@ -256,9 +286,30 @@ public class ProductController {
             @RequestBody ProductDTO productDTO) {
         try {
             Product updatedProduct = productService.updateProduct(id, productDTO);
+            logRabbit("Updated product ID: " + id + " - " + updatedProduct.getName());
+
             return ResponseEntity.ok(updatedProduct);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
+    @DeleteMapping("/images/{id}")
+    public ResponseEntity<?> deleteProductImage(@PathVariable("id") Long imageId) {
+        try {
+            productService.deleteProductImage(imageId); // Gọi service xử lý xóa ảnh
+            return ResponseEntity.ok("Image deleted successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    private void logRabbit(String msg) {
+        try {
+            messageProducer.sendMessage(msg);
+        } catch (Exception e) {
+            logger.error("Failed to send RabbitMQ message: {}", msg);
+        }
+    }
+
 }

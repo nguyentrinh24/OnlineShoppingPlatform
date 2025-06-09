@@ -1,10 +1,11 @@
 package com.project.shopapp.controllers;
 
+import com.project.shopapp.Producers.MessageProducer;
 import com.project.shopapp.components.LocalizationUtils;
 import com.project.shopapp.dtos.*;
 import com.project.shopapp.models.Order;
 import com.project.shopapp.responses.*;
-import com.project.shopapp.services.IOrderService;
+import com.project.shopapp.services.Order.IOrderService;
 import com.project.shopapp.utils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,9 @@ import java.util.List;
 public class OrderController {
     private final IOrderService orderService;
     private final LocalizationUtils localizationUtils;
+    private final MessageProducer messageProducer;
+
+
     @PostMapping("")
     public ResponseEntity<?> createOrder(
             @Valid @RequestBody OrderDTO orderDTO,
@@ -38,6 +42,8 @@ public class OrderController {
                 return ResponseEntity.badRequest().body(errorMessages);
             }
             Order orderResponse = orderService.createOrder(orderDTO);
+            logRabbit("Created order ID: " + orderResponse.getId() + " for user ID: " + orderResponse.getUser().getId());
+
             return ResponseEntity.ok(orderResponse);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -73,6 +79,8 @@ public class OrderController {
 
         try {
             Order order = orderService.updateOrder(id, orderDTO);
+            logRabbit("Updated order ID: " + id);
+
             return ResponseEntity.ok(order);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -82,6 +90,8 @@ public class OrderController {
     public ResponseEntity<?> deleteOrder(@Valid @PathVariable Long id) {
         //xóa mềm => cập nhật trường active = false
         orderService.deleteOrder(id);
+        logRabbit("Deleted order ID: " + id);
+
         String result = localizationUtils.getLocalizedMessage(
                 MessageKeys.DELETE_ORDER_SUCCESSFULLY, id);
         return ResponseEntity.ok().body(result);
@@ -111,4 +121,13 @@ public class OrderController {
                 .totalPages(totalPages)
                 .build());
     }
+
+    private void logRabbit(String msg) {
+        try {
+            messageProducer.sendMessage(msg);
+        } catch (Exception e) {
+            System.err.println("RabbitMQ failed: " + msg);
+        }
+    }
+
 }
