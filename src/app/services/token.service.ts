@@ -6,7 +6,9 @@ import { JwtHelperService } from '@auth0/angular-jwt';
     providedIn: 'root',
 })
 export class TokenService {
-    private readonly TOKEN_KEY = 'token'; // <-- Sửa lại
+    private readonly TOKEN_KEY = 'access-token';
+
+
 
     private jwtHelperService = new JwtHelperService();
     localStorage?: Storage;
