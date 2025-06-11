@@ -20,11 +20,11 @@ spring:
       use-redis-cache: false
       host: localhost
       port: 6379
-  rabbitmq:
-    host: localhost
-    port: 15672
-    username: admin
-    password: admin
+#  rabbitmq:
+#    host: localhost
+#    port: 15672
+#    username: admin
+#    password: admin
 
 #      rabbitmq-plugins.bat enable rabbitmq_management rabbitmq-server.bat
 

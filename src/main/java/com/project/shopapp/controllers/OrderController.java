@@ -13,9 +13,11 @@ import com.project.shopapp.services.Order.IOrderService;
 import com.project.shopapp.utils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apache.tomcat.util.http.parser.Authorization;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +28,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,20 +46,26 @@ public class OrderController {
     @PostMapping("")
     public ResponseEntity<?> createOrder(
             @Valid @RequestBody OrderDTO orderDTO,
+            @RequestHeader(name = "Authorization") String authorization,
             BindingResult result
     ) {
         try {
             if(result.hasErrors()) {
-                List<String> errorMessages = result.getFieldErrors()
-                        .stream()
-                        .map(FieldError::getDefaultMessage)
-                        .toList();
-                return ResponseEntity.badRequest().body(errorMessages);
+                List<String> err = new ArrayList<>();
+                for (FieldError error : result.getFieldErrors()) {
+                    err.add(error.getDefaultMessage());
+                }
+                return ResponseEntity.badRequest().body(err);
             }
+
+            String token = AuthJwtToken.extractToken(authorization);
+
             Order orderResponse = orderService.createOrder(orderDTO);
             logRabbit("Created order ID: " + orderResponse.getId() + " for user ID: " + orderResponse.getUser().getId());
 
-            return ResponseEntity.ok(orderResponse);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.AUTHORIZATION,"BEARER " +token)
+                    .body(orderResponse);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -87,33 +96,47 @@ public class OrderController {
     //công việc của admin
     public ResponseEntity<?> updateOrder(
             @Valid @PathVariable long id,
-            @Valid @RequestBody OrderDTO orderDTO) {
+            @Valid @RequestBody OrderDTO orderDTO,
+            @RequestHeader(name = "Authorization") String authorization) {
 
         try {
+            String token = AuthJwtToken.extractToken(authorization);
             Order order = orderService.updateOrder(id, orderDTO);
             logRabbit("Updated order ID: " + id);
 
-            return ResponseEntity.ok(order);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.AUTHORIZATION,"BEAER "+token)
+                    .body(order);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteOrder(@Valid @PathVariable Long id) {
+    public ResponseEntity<?> deleteOrder(@Valid @PathVariable Long id,
+                                         @RequestHeader(name = "Authorization") String authorization) {
+        String token = AuthJwtToken.extractToken(authorization);
         //xóa mềm => cập nhật trường active = false
         orderService.deleteOrder(id);
         logRabbit("Deleted order ID: " + id);
 
         String result = localizationUtils.getLocalizedMessage(
                 MessageKeys.DELETE_ORDER_SUCCESSFULLY, id);
-        return ResponseEntity.ok().body(result);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.AUTHORIZATION,"BEARER " +token)
+                .body(result);
     }
+
+
     @GetMapping("/get-orders-by-keyword")
     public ResponseEntity<OrderListResponse> getOrdersByKeyword(
             @RequestParam(defaultValue = "", required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int limit
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestHeader(name = "Authorization",required = false) String authorizationHeader
     ) {
+        //token
+        String token = AuthJwtToken.extractToken(authorizationHeader);
+
         // Tạo Pageable từ thông tin trang và giới hạn
         PageRequest pageRequest = PageRequest.of(
                 page, limit,
@@ -126,11 +149,14 @@ public class OrderController {
         // Lấy tổng số trang
         int totalPages = orderPage.getTotalPages();
         List<OrderResponse> orderResponses = orderPage.getContent();
-        return ResponseEntity.ok(OrderListResponse
+       OrderListResponse orderResponse=OrderListResponse
                 .builder()
                 .orders(orderResponses)
                 .totalPages(totalPages)
-                .build());
+                .build();
+       return ResponseEntity.ok()
+               .header(HttpHeaders.AUTHORIZATION,"BEARER "+token)
+               .body(orderResponse);
     }
 
     private void logRabbit(String msg) {
@@ -142,28 +168,30 @@ public class OrderController {
     }
 
     @GetMapping("/latest")
-    public ResponseEntity<Map<String,Object>> getLatestOrder(
+    public ResponseEntity<?> getLatestOrder(
             @AuthenticationPrincipal User userDetails,
             @RequestHeader(name = "Authorization", required = false) String authorizationHeader
     ) {
-        // 1. Lấy token
-        String token = AuthJwtToken.extractToken(authorizationHeader);
+        //Lấy token
+            String token = AuthJwtToken.extractToken(authorizationHeader);
 
-        // 2. Lấy đơn hàng mới nhất
+        //  Lấy đơn hàng mới nhất
         Order order = orderRepository
                 .findTopByUserIdOrderByOrderDateDesc(userDetails.getId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Không tìm thấy đơn hàng mới nhất cho user id=" + userDetails.getId()
                 ));
-        // 3. Build response
+        //Build response
         Map<String,Object> body = Map.of(
                 "token", token,
                 "user", UserResponse.fromUser(userDetails),
                 "order", OrderResponse.fromOrder(order)
         );
 
-        return ResponseEntity.ok(body);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.AUTHORIZATION,"BEARER " + token)
+                .body(body);
     }
 
 
