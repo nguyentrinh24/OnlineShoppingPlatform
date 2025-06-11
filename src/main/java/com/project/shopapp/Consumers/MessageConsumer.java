@@ -10,6 +10,7 @@ public class MessageConsumer {
 
     @RabbitListener(queues = ConfigRabbitmq.QUEUE)
     public void receiveMessage(String message) {
+
         System.out.println(">> [RabbitMQ] Received: " + message);
     }
 

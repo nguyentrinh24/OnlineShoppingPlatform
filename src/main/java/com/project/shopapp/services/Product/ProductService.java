@@ -28,6 +28,7 @@ import java.util.Optional;
 public class ProductService implements IProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductRedisService  productRedisService;
     private final ProductImageRepository productImageRepository;
     @Override
     @Transactional
@@ -42,6 +43,7 @@ public class ProductService implements IProductService {
                 .name(productDTO.getName())
                 .price(productDTO.getPrice())
                 .thumbnail(productDTO.getThumbnail())
+                .stock_quantity(productDTO.getStock_quantity())
                 .description(productDTO.getDescription())
                 .category(existingCategory)
                 .build();
@@ -79,8 +81,6 @@ public class ProductService implements IProductService {
             throws Exception {
         Product existingProduct = getProductById(id);
         if(existingProduct != null) {
-            //copy các thuộc tính từ DTO -> Product
-            //Có thể sử dụng ModelMapper
             Category existingCategory = categoryRepository
                     .findById(productDTO.getCategoryId())
                     .orElseThrow(() ->
@@ -89,6 +89,7 @@ public class ProductService implements IProductService {
             existingProduct.setName(productDTO.getName());
             existingProduct.setCategory(existingCategory);
             existingProduct.setPrice(productDTO.getPrice());
+            existingProduct.setStock_quantity(productDTO.getStock_quantity());
             existingProduct.setDescription(productDTO.getDescription());
             if (productDTO.getThumbnail() != null && !productDTO.getThumbnail().isEmpty()) {
                 existingProduct.setThumbnail(productDTO.getThumbnail());

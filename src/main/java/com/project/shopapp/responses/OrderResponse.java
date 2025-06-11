@@ -44,6 +44,7 @@ public class OrderResponse {
     private String status;
 
     @JsonProperty("total_money")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "#,###.##")
     private double totalMoney;
 
     @JsonProperty("shipping_method")

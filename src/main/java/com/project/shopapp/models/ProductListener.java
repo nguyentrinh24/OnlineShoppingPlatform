@@ -3,15 +3,22 @@ package com.project.shopapp.models;
 import com.project.shopapp.services.Product.IProductRedisService;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+
 @AllArgsConstructor
-
-
+@Component
 public class ProductListener {
 
     private static final Logger logger = LoggerFactory.getLogger(ProductListener.class);
     private static IProductRedisService productRedisService;
+
+    public  ProductListener(IProductRedisService productRedisService) {
+        this.productRedisService = productRedisService;
+    }
 
     @PrePersist
     public void prePersist(Product product) {
@@ -33,9 +40,13 @@ public class ProductListener {
 
     @PostUpdate
     public void postUpdate(Product product) {
-        // Update Redis cache
         logger.info("postUpdate");
-        productRedisService.clear();
+        try {
+            productRedisService.clear();
+        } catch (Exception ex) {
+            logger.error("Failed to clear Redis cache", ex);
+
+        }
     }
 
     @PreRemove

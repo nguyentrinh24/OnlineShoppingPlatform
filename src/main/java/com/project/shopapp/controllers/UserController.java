@@ -16,6 +16,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import com.project.shopapp.dtos.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -34,14 +35,14 @@ public class UserController {
         RegisterResponse registerResponse = new RegisterResponse();
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result.getFieldErrors()
-                    .stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-
+            List<String> errorMessages = new ArrayList<>();
+            for (FieldError error : result.getFieldErrors()) {
+                errorMessages.add(error.getDefaultMessage());
+            }
             registerResponse.setMessage(errorMessages.toString());
             return ResponseEntity.badRequest().body(registerResponse);
         }
+
 
         if (!userDTO.getPassword().equals(userDTO.getRetypePassword())) {
             registerResponse.setMessage(localizationUtils.getLocalizedMessage(MessageKeys.PASSWORD_NOT_MATCH));

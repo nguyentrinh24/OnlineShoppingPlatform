@@ -54,13 +54,14 @@ public class ProductController {
             BindingResult result
     ) {
         try {
-            if(result.hasErrors()) {
-                List<String> errorMessages = result.getFieldErrors()
-                        .stream()
-                        .map(FieldError::getDefaultMessage)
-                        .toList();
+            if (result.hasErrors()) {
+                List<String> errorMessages = new ArrayList<>();
+                for (FieldError error : result.getFieldErrors()) {
+                    errorMessages.add(error.getDefaultMessage());
+                }
                 return ResponseEntity.badRequest().body(errorMessages);
             }
+
             Product newProduct = productService.createProduct(productDTO);
             logRabbit("Created product: " + newProduct.getName());
 
@@ -152,17 +153,17 @@ public class ProductController {
             throw new IOException("Invalid image format");
         }
         String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
-        // Thêm UUID vào trước tên file để đảm bảo tên file là duy nhất
+
         String uniqueFilename = UUID.randomUUID().toString() + "_" + filename;
-        // Đường dẫn đến thư mục mà bạn muốn lưu file
+
         java.nio.file.Path uploadDir = Paths.get("uploads");
-        // Kiểm tra và tạo thư mục nếu nó không tồn tại
+
         if (!Files.exists(uploadDir)) {
             Files.createDirectories(uploadDir);
         }
-        // Đường dẫn đầy đủ đến file
+
         java.nio.file.Path destination = Paths.get(uploadDir.toString(), uniqueFilename);
-        // Sao chép file vào thư mục đích
+
         Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
         return uniqueFilename;
     }
@@ -179,7 +180,7 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit
     ) throws JsonProcessingException {
-        // Tạo Pageable từ thông tin trang và giới hạn
+
         PageRequest pageRequest = PageRequest.of(
                 page, limit,
                 Sort.by("id").ascending()
@@ -187,14 +188,14 @@ public class ProductController {
         logger.info("keyword = {}, category_id = {}, page = {}, limit = {}",
                 keyword, categoryId, page, limit);
 
-        // 1. Thử lấy từ Redis cache
+
         List<ProductResponse> products = productRedisService.getAllProducts(keyword, categoryId, pageRequest);
 
-        // 2. Nếu cache miss, gọi service DB và lưu lại vào Redis
+
         int totalPages;
         if (products != null) {
             logger.info("Cache hit for key all_products:{}:{}:{}:{}:*", keyword, categoryId, page, limit);
-            // Lấy tổng số trang vẫn phải gọi service để biết totalPages
+
             Page<ProductResponse> pageInfo = productService.getAllProducts(keyword, categoryId, pageRequest);
             totalPages = pageInfo.getTotalPages();
         } else {
@@ -203,11 +204,11 @@ public class ProductController {
             products = pageResult.getContent();
             totalPages = pageResult.getTotalPages();
 
-            // Lưu vào Redis để lần sau dùng
+
             productRedisService.saveAllProducts(products, keyword, categoryId, pageRequest);
         }
 
-        // 3. Trả về response
+
         ProductListResponse response = ProductListResponse.builder()
                 .products(products)
                 .totalPages(totalPages)
@@ -235,9 +236,11 @@ public class ProductController {
         //eg: 1,3,5,7
         try {
             // Tách chuỗi ids thành một mảng các số nguyên
-            List<Long> productIds = Arrays.stream(ids.split(","))
-                    .map(Long::parseLong)
-                    .collect(Collectors.toList());
+            List<Long> productIds = new ArrayList<>();
+            for (String idStr : ids.split(",")) {
+                productIds.add(Long.parseLong(idStr));
+            }
+
             List<Product> products = productService.findProductsByIds(productIds);
             return ResponseEntity.ok(products);
         } catch (Exception e) {
@@ -290,7 +293,9 @@ public class ProductController {
 
             return ResponseEntity.ok(updatedProduct);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 

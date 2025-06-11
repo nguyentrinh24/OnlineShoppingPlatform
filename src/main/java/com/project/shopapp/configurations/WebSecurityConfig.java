@@ -110,6 +110,7 @@ public class WebSecurityConfig {
                                     String.format("%s/healthcheck/**", apiPrefix)).permitAll()
 
 
+
 //                            .anyRequest().authenticated();
                             .anyRequest().permitAll();
 

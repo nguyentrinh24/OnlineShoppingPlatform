@@ -3,7 +3,11 @@ package com.project.shopapp.controllers;
 import com.project.shopapp.Producers.MessageProducer;
 import com.project.shopapp.components.LocalizationUtils;
 import com.project.shopapp.dtos.*;
+import com.project.shopapp.filters.AuthJwtToken;
 import com.project.shopapp.models.Order;
+import com.project.shopapp.models.User;
+import com.project.shopapp.repositories.OrderRepository;
+import com.project.shopapp.repositories.UserRepository;
 import com.project.shopapp.responses.*;
 import com.project.shopapp.services.Order.IOrderService;
 import com.project.shopapp.utils.MessageKeys;
@@ -12,12 +16,19 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.bind.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("${api.prefix}/orders")
@@ -26,6 +37,7 @@ public class OrderController {
     private final IOrderService orderService;
     private final LocalizationUtils localizationUtils;
     private final MessageProducer messageProducer;
+    private final OrderRepository orderRepository;
 
 
     @PostMapping("")
@@ -97,7 +109,6 @@ public class OrderController {
         return ResponseEntity.ok().body(result);
     }
     @GetMapping("/get-orders-by-keyword")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<OrderListResponse> getOrdersByKeyword(
             @RequestParam(defaultValue = "", required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
@@ -129,5 +140,33 @@ public class OrderController {
             System.err.println("RabbitMQ failed: " + msg);
         }
     }
+
+    @GetMapping("/latest")
+    public ResponseEntity<Map<String,Object>> getLatestOrder(
+            @AuthenticationPrincipal User userDetails,
+            @RequestHeader(name = "Authorization", required = false) String authorizationHeader
+    ) {
+        // 1. Lấy token
+        String token = AuthJwtToken.extractToken(authorizationHeader);
+
+        // 2. Lấy đơn hàng mới nhất
+        Order order = orderRepository
+                .findTopByUserIdOrderByOrderDateDesc(userDetails.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Không tìm thấy đơn hàng mới nhất cho user id=" + userDetails.getId()
+                ));
+        // 3. Build response
+        Map<String,Object> body = Map.of(
+                "token", token,
+                "user", UserResponse.fromUser(userDetails),
+                "order", OrderResponse.fromOrder(order)
+        );
+
+        return ResponseEntity.ok(body);
+    }
+
+
+
 
 }

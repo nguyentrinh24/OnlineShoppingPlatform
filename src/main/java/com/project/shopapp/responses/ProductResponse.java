@@ -1,5 +1,6 @@
 package com.project.shopapp.responses;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.project.shopapp.models.Product;
 import com.project.shopapp.models.ProductImage;
@@ -20,9 +21,11 @@ import java.util.List;
 public class ProductResponse extends BaseResponse{
     private Long id;
     private String name;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "#,###.##")
     private Float price;
     private String thumbnail;
     private String description;
+    private Float stock_quantity;
     @JsonProperty("product_images")
     private List<ProductImage> productImages = new ArrayList<>();
 
@@ -35,6 +38,7 @@ public class ProductResponse extends BaseResponse{
                 .price(product.getPrice())
                 .thumbnail(product.getThumbnail())
                 .description(product.getDescription())
+                .stock_quantity(product.getStock_quantity())
                 .categoryId(product.getCategory().getId())
                 .productImages(product.getProductImages())
                 .build();

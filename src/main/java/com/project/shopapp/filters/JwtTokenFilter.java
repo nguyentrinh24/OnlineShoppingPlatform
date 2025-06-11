@@ -36,7 +36,7 @@ public class JwtTokenFilter extends OncePerRequestFilter{
             throws ServletException, IOException {
         try {
             if(isBypassToken(request)) {
-                filterChain.doFilter(request, response); //enable bypass
+                filterChain.doFilter(request, response); // bypass
                 return;
             }
             final String authHeader = request.getHeader("Authorization");
@@ -60,7 +60,7 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 }
             }
-            filterChain.doFilter(request, response); //enable bypass
+            filterChain.doFilter(request, response); // bypass
         }catch (Exception e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
         }
@@ -82,11 +82,11 @@ public class JwtTokenFilter extends OncePerRequestFilter{
 
         if (requestPath.startsWith(String.format("/%s/orders", apiPrefix))
                 && requestMethod.equals("GET")) {
-            // Check if the requestPath matches the desired pattern
+
             if (requestPath.matches(String.format("/%s/orders/\\d+", apiPrefix))) {
                 return true;
             }
-            // If the requestPath is just "%s/orders", return true
+
             if (requestPath.equals(String.format("/%s/orders", apiPrefix))) {
                 return true;
             }
