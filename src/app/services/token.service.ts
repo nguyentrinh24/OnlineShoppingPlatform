@@ -8,8 +8,6 @@ import { JwtHelperService } from '@auth0/angular-jwt';
 export class TokenService {
     private readonly TOKEN_KEY = 'access-token';
 
-
-
     private jwtHelperService = new JwtHelperService();
     localStorage?: Storage;
 

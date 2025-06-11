@@ -5,6 +5,7 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { OrderDTO } from '../dtos/order/order.dto';
 import { OrderResponse } from '../responses/order/order.response';
+import { Order } from '../models/order';
 
 @Injectable({
   providedIn: 'root',
@@ -49,7 +50,15 @@ export class OrderService {
     const url = `${environment.apiBaseUrl}/orders/${orderId}`;
     return this.http.delete(url, { responseType: 'text' });
   }
-  getLatestOrder(): Observable<OrderResponse> {
-    return this.http.get<OrderResponse>(`${this.apiUrl}/latest`);
+  getLatestOrder(): Observable<Order> {
+    const token = localStorage.getItem('access-token') || '';
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.get<Order>(`${this.apiUrl}/latest`, { headers })
+      .pipe(
+        tap(res => {
+          // Lưu lại token mới nếu server trả về
+          localStorage.setItem('access-token', res.token);
+        })
+      );
   }
 }

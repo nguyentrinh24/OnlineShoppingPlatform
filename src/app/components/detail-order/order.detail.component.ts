@@ -50,6 +50,7 @@ export class OrderDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.getOrderDetails();
+
   }
 
   getOrderDetails(): void {
