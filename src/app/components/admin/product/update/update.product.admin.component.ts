@@ -81,21 +81,22 @@ export class UpdateProductAdminComponent implements OnInit {
     });
   }
   updateProduct() {
-    // Implement your update logic here
+    debugger
     const updateProductDTO: UpdateProductDTO = {
       name: this.updatedProduct.name,
       price: this.updatedProduct.price,
       description: this.updatedProduct.description,
-      category_id: this.updatedProduct.category_id
+      category_id: Number(this.updatedProduct.category_id),
+      stock_quantity: Number(this.updatedProduct.stock_quantity)
     };
     this.productService.updateProduct(this.product.id, updateProductDTO).subscribe({
       next: (response: any) => {
         debugger
-      },
-      complete: () => {
-        debugger;
+        this.product = response;
+        console.log('Đã cập nhật:', response);
         this.router.navigate(['/admin/products']);
       },
+
       error: (error: any) => {
         debugger;
         console.error('Error fetching products:', error);

@@ -16,6 +16,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { inject } from '@angular/core';
 import { CouponService } from '../../services/coupon.service';
+import { OrderResponse } from '../../responses/order/order.response';
 
 @Component({
   selector: 'app-order',
@@ -46,27 +47,27 @@ export class OrderComponent implements OnInit {
   couponApplied: boolean = false;
   cart: Map<number, number> = new Map();
   orderData: OrderDTO = {
-    user_id: 0, // Thay bằng user_id thích hợp
-    fullname: '', // Khởi tạo rỗng, sẽ được điền từ form
-    email: '', // Khởi tạo rỗng, sẽ được điền từ form    
-    phone_number: '', // Khởi tạo rỗng, sẽ được điền từ form
-    address: '', // Khởi tạo rỗng, sẽ được điền từ form
+    user_id: 0,
+    fullname: '',
+    email: '',
+    phone_number: '',
+    address: '',
     status: 'pending',
-    note: '', // Có thể thêm trường ghi chú nếu cần
-    total_money: 0, // Sẽ được tính toán dựa trên giỏ hàng và mã giảm giá
-    payment_method: 'cod', // Mặc định là thanh toán khi nhận hàng (COD)
-    shipping_method: 'express', // Mặc định là vận chuyển nhanh (Express)
-    coupon_code: '', // Sẽ được điền từ form khi áp dụng mã giảm giá
+    note: '',
+    total_money: 0,
+    payment_method: 'cod',
+    shipping_method: 'express',
+    coupon_code: '',
     cart_items: []
   };
 
   constructor() {
-    // Tạo FormGroup và các FormControl tương ứng
+    // Tạo FormGroup và  FormControl 
     this.orderForm = this.formBuilder.group({
-      fullname: ['', Validators.required], // fullname là FormControl bắt buộc      
-      email: ['', [Validators.email]], // Sử dụng Validators.email cho kiểm tra định dạng email
-      phone_number: ['', [Validators.required, Validators.minLength(6)]], // phone_number bắt buộc và ít nhất 6 ký tự
-      address: ['', [Validators.required, Validators.minLength(5)]], // address bắt buộc và ít nhất 5 ký tự
+      fullname: ['', Validators.required],
+      email: ['', [Validators.email]],
+      phone_number: ['', [Validators.required, Validators.minLength(6)]],
+      address: ['', [Validators.required, Validators.minLength(5)]],
       note: [''],
       couponCode: [''],
       shipping_method: ['express'],
@@ -118,17 +119,8 @@ export class OrderComponent implements OnInit {
   placeOrder() {
     //debugger
     if (this.orderForm.errors == null) {
-      // Gán giá trị từ form vào đối tượng orderData
-      /*
-      this.orderData.fullname = this.orderForm.get('fullname')!.value;
-      this.orderData.email = this.orderForm.get('email')!.value;
-      this.orderData.phone_number = this.orderForm.get('phone_number')!.value;
-      this.orderData.address = this.orderForm.get('address')!.value;
-      this.orderData.note = this.orderForm.get('note')!.value;
-      this.orderData.shipping_method = this.orderForm.get('shipping_method')!.value;
-      this.orderData.payment_method = this.orderForm.get('payment_method')!.value;
-      */
-      // Sử dụng toán tử spread (...) để sao chép giá trị từ form vào orderData
+
+      //tử spread (...) để sao chép giá trị từ form vào orderData
       this.orderData = {
         ...this.orderData,
         ...this.orderForm.value
@@ -139,22 +131,21 @@ export class OrderComponent implements OnInit {
       }));
       this.orderData.total_money = this.totalAmount;
       // Dữ liệu hợp lệ, bạn có thể gửi đơn hàng đi
-      this.orderService.placeOrder(this.orderData).subscribe({
-        next: (response: Order) => {
-          //debugger;          
-          alert('Đặt hàng thành công');
-          this.cartService.clearCart();
-          this.router.navigate(['/']);
-        },
-        complete: () => {
-          //debugger;
-          this.calculateTotal();
-        },
-        error: (error: any) => {
-          //debugger;
-          alert(`Lỗi khi đặt hàng: ${error}`);
-        },
-      });
+      this.orderService.placeOrder(this.orderData)
+        .subscribe({
+          next: (response: OrderResponse) => {
+            alert('Đặt hàng thành công');
+            this.cartService.clearCart();
+            this.router.navigate(['/']);
+          },
+          error: (error: any) => {
+            alert(`Lỗi khi đặt hàng: ${error}`);
+          },
+          complete: () => {
+            this.calculateTotal();
+          }
+        });
+
     } else {
       // Hiển thị thông báo lỗi hoặc xử lý khác
       alert('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.');

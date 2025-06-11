@@ -25,6 +25,7 @@ export class HeaderComponent implements OnInit {
   userResponse?: UserResponse | null;
   isPopoverOpen = false;
   activeNavItem: number = 0;
+  latestOrderId: number | null = null;
 
 
   constructor(
@@ -37,6 +38,10 @@ export class HeaderComponent implements OnInit {
   }
   ngOnInit() {
     this.userResponse = this.userService.getUserResponseFromLocalStorage();
+    this.orderService.getLatestOrder().subscribe({
+      next: order => this.latestOrderId = order.id,
+      error: () => this.latestOrderId = null
+    });
   }
 
   togglePopover(event: Event): void {
@@ -45,14 +50,14 @@ export class HeaderComponent implements OnInit {
   }
 
   handleItemClick(index: number): void {
+    debugger
     if (index === 0) {
       this.router.navigate(['/user-profile']);
     } else if (index === 1) {
-      const orderId = this.orderService.latestOrderId;
-      if (orderId) {
-        this.router.navigate(['/orders', orderId]);
+      if (this.latestOrderId) {
+        this.router.navigate(['/orders', this.latestOrderId]);
       } else {
-        console.error('Không có đơn hàng nào được lưu.');
+        console.error('Không tìm thấy đơn hàng gần nhất.');
       }
     } else if (index === 2) {
       this.userService.removeUserFromLocalStorage();

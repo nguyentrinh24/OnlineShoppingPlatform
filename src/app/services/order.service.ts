@@ -1,7 +1,7 @@
 import { ProductService } from './product.service';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { OrderDTO } from '../dtos/order/order.dto';
 import { OrderResponse } from '../responses/order/order.response';
@@ -13,11 +13,20 @@ export class OrderService {
   private apiUrl = `${environment.apiBaseUrl}/orders`;
   private apiGetAllOrders = `${environment.apiBaseUrl}/orders/get-orders-by-keyword`;
   public latestOrderId: number | null = null;
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    // Khôi phục từ localStorage nếu có
+    const saved = localStorage.getItem('latestOrderId');
+    this.latestOrderId = saved ? +saved : null;
+  }
 
-  placeOrder(orderData: OrderDTO): Observable<any> {
-    // Gửi yêu cầu đặt hàng
-    return this.http.post(this.apiUrl, orderData);
+  placeOrder(orderData: OrderDTO): Observable<OrderResponse> {
+
+    return this.http.post<OrderResponse>(this.apiUrl, orderData).pipe(
+      tap(res => {
+        this.latestOrderId = res.id;
+        localStorage.setItem('latestOrderId', res.id.toString());
+      })
+    );
   }
   getOrderById(orderId: number): Observable<any> {
     const url = `${environment.apiBaseUrl}/orders/${orderId}`;
@@ -39,5 +48,8 @@ export class OrderService {
   deleteOrder(orderId: number): Observable<any> {
     const url = `${environment.apiBaseUrl}/orders/${orderId}`;
     return this.http.delete(url, { responseType: 'text' });
+  }
+  getLatestOrder(): Observable<OrderResponse> {
+    return this.http.get<OrderResponse>(`${this.apiUrl}/latest`);
   }
 }

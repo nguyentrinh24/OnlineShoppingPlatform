@@ -23,6 +23,7 @@ export class InsertProductAdminComponent implements OnInit {
     name: '',
     price: 0,
     description: '',
+    stock_quantity: 0,
     category_id: 1,
     images: []
   };

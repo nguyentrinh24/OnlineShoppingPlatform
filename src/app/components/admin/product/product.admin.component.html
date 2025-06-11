@@ -23,6 +23,7 @@
         <th>Giá</th>
         <th>Ảnh đại diện</th>
         <th>Mô tả</th>
+        <th>Tồn kho </th>
         <th>Trạng thái</th>
 
       </tr>
@@ -37,6 +38,8 @@
           <img src="{{ product.url }}" class="rounded-square" alt="Thumbnail" width="100" height="100">
         </td>
         <td>{{ product.description }}</td>
+        <td>{{ product.stock_quantity }}</td>
+
         <td>
           <div style="display: flex; gap: 10px;">
             <button class="btn btn-primary" (click)="updateProduct(product.id)">

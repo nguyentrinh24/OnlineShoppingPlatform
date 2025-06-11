@@ -4,7 +4,7 @@ import { CartService } from '../../services/cart.service';
 import { ProductService } from '../../services/product.service';
 import { OrderService } from '../../services/order.service';
 import { OrderDTO } from '../../dtos/order/order.dto';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { OrderResponse } from '../../responses/order/order.response';
 import { environment } from '../../../environments/environment';
 import { OrderDetail } from '../../models/order.detail';
@@ -21,7 +21,8 @@ import { CommonModule } from '@angular/common';
   imports: [
     FooterComponent,
     HeaderComponent,
-    CommonModule
+    CommonModule,
+    RouterModule
   ]
 })
 export class OrderDetailComponent implements OnInit {
@@ -52,11 +53,12 @@ export class OrderDetailComponent implements OnInit {
   }
 
   getOrderDetails(): void {
-    //debugger
-    const orderId = Number(this.route.snapshot.paramMap.get('orderId'));
+    debugger
+    const orderId = Number(this.route.snapshot.paramMap.get('id'));
     this.orderService.getOrderById(orderId).subscribe({
       next: (response: any) => {
         // Gán lại cho latestOrderId tại đây
+        debugger
         this.orderService.latestOrderId = response.id;
 
         this.orderResponse.id = response.id;
