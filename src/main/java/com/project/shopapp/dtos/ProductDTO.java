@@ -25,7 +25,7 @@ public class ProductDTO {
     private String thumbnail;
 
 
-    private Float stock_quantity;
+    private Integer stock_quantity;
 
     private String description;
 

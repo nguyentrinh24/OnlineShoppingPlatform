@@ -1,7 +1,7 @@
 package com.project.shopapp.Consumers;
 
 
-import com.project.shopapp.configurations.ConfigRabbitmq;
+import com.project.shopapp.Configurations.ConfigRabbitmq;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 

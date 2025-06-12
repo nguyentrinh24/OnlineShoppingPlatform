@@ -6,8 +6,8 @@ import com.project.shopapp.components.LocalizationUtils;
 import com.project.shopapp.dtos.*;
 import com.project.shopapp.models.Product;
 import com.project.shopapp.models.ProductImage;
-import com.project.shopapp.responses.ProductListResponse;
-import com.project.shopapp.responses.ProductResponse;
+import com.project.shopapp.responses.Product.ProductListResponse;
+import com.project.shopapp.responses.Product.ProductResponse;
 import com.project.shopapp.services.Product.IProductRedisService;
 import com.project.shopapp.services.Product.IProductService;
 import com.project.shopapp.utils.MessageKeys;
@@ -33,7 +33,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("${api.prefix}/products")
@@ -187,15 +186,10 @@ public class ProductController {
         );
         logger.info("keyword = {}, category_id = {}, page = {}, limit = {}",
                 keyword, categoryId, page, limit);
-
-
         List<ProductResponse> products = productRedisService.getAllProducts(keyword, categoryId, pageRequest);
-
-
         int totalPages;
         if (products != null) {
             logger.info("Cache hit for key all_products:{}:{}:{}:{}:*", keyword, categoryId, page, limit);
-
             Page<ProductResponse> pageInfo = productService.getAllProducts(keyword, categoryId, pageRequest);
             totalPages = pageInfo.getTotalPages();
         } else {
@@ -203,17 +197,12 @@ public class ProductController {
             Page<ProductResponse> pageResult = productService.getAllProducts(keyword, categoryId, pageRequest);
             products = pageResult.getContent();
             totalPages = pageResult.getTotalPages();
-
-
             productRedisService.saveAllProducts(products, keyword, categoryId, pageRequest);
         }
-
-
         ProductListResponse response = ProductListResponse.builder()
                 .products(products)
                 .totalPages(totalPages)
                 .build();
-
         return ResponseEntity.ok(response);
     }
 

@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,6 +31,8 @@ public class JwtTokenFilter extends OncePerRequestFilter{
     private String apiPrefix;
     private final UserDetailsService userDetailsService;
     private final JwtTokenUtils jwtTokenUtil;
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenFilter.class);
+
     @Override
     protected void doFilterInternal(@NonNull  HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
@@ -60,10 +64,14 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 }
             }
-            filterChain.doFilter(request, response); // bypass
+
+            filterChain.doFilter(request, response);
+
+
         }catch (Exception e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
         }
+
 
     }
     private boolean isBypassToken(@NonNull HttpServletRequest request) {
@@ -74,7 +82,10 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                 Pair.of(String.format("%s/products", apiPrefix), "GET"),
                 Pair.of(String.format("%s/categories", apiPrefix), "GET"),
                 Pair.of(String.format("%s/users/register", apiPrefix), "POST"),
-                Pair.of(String.format("%s/users/login", apiPrefix), "POST")
+                Pair.of(String.format("%s/users/login", apiPrefix), "POST"),
+                Pair.of(String.format("%s/coupons/calculate", apiPrefix), "GET"),
+                Pair.of(String.format("%s/users/refreshToken", apiPrefix), "POST")
+
 
         );
 
@@ -92,6 +103,9 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                 return true;
             }
         }
+
+        log.debug("isBypass? path={} method={} tokens={}", requestPath, requestMethod, bypassTokens);
+
         for (Pair<String, String> bypassToken : bypassTokens) {
             if (requestPath.contains(bypassToken.getFirst())
                     && requestMethod.equals(bypassToken.getSecond())) {

@@ -32,8 +32,11 @@ public class Product extends BaseEntity{
     @Column(name = "description")
     private String description;
 
+    @Column(name = "quantity",nullable = false)
+    private Integer quantity;
+
     @Column(name="stock_quantity",nullable = false)
-    private Float stock_quantity;
+    private Integer stock_quantity;
 
     @ManyToOne
     @JoinColumn(name = "category_id")

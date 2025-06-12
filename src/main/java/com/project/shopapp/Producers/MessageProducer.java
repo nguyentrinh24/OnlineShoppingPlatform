@@ -1,6 +1,6 @@
 package com.project.shopapp.Producers;
 
-import com.project.shopapp.configurations.ConfigRabbitmq;
+import com.project.shopapp.Configurations.ConfigRabbitmq;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;

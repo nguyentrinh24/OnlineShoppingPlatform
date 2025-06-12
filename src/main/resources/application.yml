@@ -20,6 +20,7 @@ spring:
       use-redis-cache: false
       host: localhost
       port: 6379
+      time-to-live: 600000
 #  rabbitmq:
 #    host: localhost
 #    port: 15672
@@ -33,8 +34,9 @@ api:
   prefix: /api/v1
 
 jwt:
-  expiration: 2592000
-  secretKey: TaqlmGv1iEDMRiFp/pHuID1+T84IABfuA0xXh4GhiUI=
+  secret: TaqlmGv1iEDMRiFp/pHuID1+T84IABfuA0xXh4GhiUI=
+  expiration: 900            # access token (15 phút)
+  refresh-expiration: 2592000 # refresh token (30 ngày)
 
 logging:
   level:

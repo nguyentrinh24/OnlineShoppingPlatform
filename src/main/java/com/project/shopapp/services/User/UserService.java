@@ -9,6 +9,7 @@ import com.project.shopapp.exceptions.DataNotFoundException;
 import com.project.shopapp.exceptions.PermissionDenyException;
 import com.project.shopapp.models.*;
 import com.project.shopapp.repositories.RoleRepository;
+import com.project.shopapp.repositories.TokenRepository;
 import com.project.shopapp.repositories.UserRepository;
 import com.project.shopapp.utils.MessageKeys;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class UserService implements IUserService {
     private final JwtTokenUtils jwtTokenUtil;
     private final AuthenticationManager authenticationManager;
     private final LocalizationUtils localizationUtils;
+    private final TokenRepository tokenRepository;
     @Override
     @Transactional
     public User createUser(UserDTO userDTO) throws Exception {
@@ -79,7 +81,7 @@ public class UserService implements IUserService {
         if(optionalUser.isEmpty()) {
             throw new DataNotFoundException(localizationUtils.getLocalizedMessage(MessageKeys.WRONG_PHONE_PASSWORD));
         }
-        //return optionalUser.get();//muốn trả JWT token ?
+
         User existingUser = optionalUser.get();
         //check password
         if (existingUser.getFacebookAccountId() == 0
@@ -88,6 +90,7 @@ public class UserService implements IUserService {
                 throw new BadCredentialsException(localizationUtils.getLocalizedMessage(MessageKeys.WRONG_PHONE_PASSWORD));
             }
         }
+
         Optional<Role> optionalRole = roleRepository.findById(roleId);
         if(optionalRole.isEmpty() || !roleId.equals(existingUser.getRole().getId())) {
             throw new DataNotFoundException(localizationUtils.getLocalizedMessage(MessageKeys.ROLE_DOES_NOT_EXISTS));
@@ -100,7 +103,7 @@ public class UserService implements IUserService {
                 existingUser.getAuthorities()
         );
 
-        //authenticate with Java Spring security
+
         authenticationManager.authenticate(authenticationToken);
         return jwtTokenUtil.generateToken(existingUser);
     }
@@ -151,6 +154,12 @@ public class UserService implements IUserService {
         //existingUser.setRole(updatedRole);
         // Save the updated user
         return userRepository.save(existingUser);
+    }
+
+    @Override
+    public User getUserDetailsFromRefreshToken(String refreshToken) throws Exception {
+        Token existingToken = tokenRepository.findByRefreshToken(refreshToken);
+        return getUserDetailsFromToken(existingToken.getToken());
     }
 
     @Override
