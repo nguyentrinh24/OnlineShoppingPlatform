@@ -48,46 +48,68 @@ public class OrderController {
     ) {
         try {
             if(result.hasErrors()) {
-                List<String> err = new ArrayList<>();
+                List<String> errorMessages = new ArrayList<>();
                 for (FieldError error : result.getFieldErrors()) {
-                    err.add(error.getDefaultMessage());
+                    errorMessages.add(error.getDefaultMessage());
                 }
-                return ResponseEntity.badRequest().body(err);
+                return ResponseEntity.badRequest().body(errorMessages);
+            }
+
+            // Validate cart items
+            if (orderDTO.getCartItems() == null || orderDTO.getCartItems().isEmpty()) {
+                return ResponseEntity.badRequest().body("Cart items cannot be empty");
+            }
+
+            // Validate total money
+            if (orderDTO.getTotalMoney() <= 0) {
+                return ResponseEntity.badRequest().body("Total money must be greater than 0");
             }
 
             String token = AuthJwtToken.extractToken(authorization);
-
             Order orderResponse = orderService.createOrder(orderDTO);
             logRabbit("Created order ID: " + orderResponse.getId() + " for user ID: " + orderResponse.getUser().getId());
 
             return ResponseEntity.ok()
-                    .header(HttpHeaders.AUTHORIZATION,"BEARER " +token)
+                    .header(HttpHeaders.AUTHORIZATION, "BEARER " + token)
                     .body(orderResponse);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @GetMapping("/user/{user_id}") // Thêm biến đường dẫn "user_id"
-    //GET http://localhost:8088/api/v1/orders/user/4
-    public ResponseEntity<?> getOrders(@Valid @PathVariable("user_id") Long userId) {
+
+    @GetMapping("/user/{user_id}")
+    public ResponseEntity<?> getOrders(
+            @Valid @PathVariable("user_id") Long userId,
+            @RequestHeader(name = "Authorization") String authorization
+    ) {
         try {
+            String token = AuthJwtToken.extractToken(authorization);
             List<Order> orders = orderService.findByUserId(userId);
-            return ResponseEntity.ok(orders);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.AUTHORIZATION, "BEARER " + token)
+                    .body(orders);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    //GET http://localhost:8088/api/v1/orders/2
+
     @GetMapping("/{id}")
-    public ResponseEntity<?> getOrder(@Valid @PathVariable("id") Long orderId) {
+    public ResponseEntity<?> getOrder(
+            @Valid @PathVariable("id") Long orderId,
+            @RequestHeader(name = "Authorization") String authorization
+    ) {
         try {
+            String token = AuthJwtToken.extractToken(authorization);
             Order existingOrder = orderService.getOrder(orderId);
             OrderResponse orderResponse = OrderResponse.fromOrder(existingOrder);
-            return ResponseEntity.ok(orderResponse);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.AUTHORIZATION, "BEARER " + token)
+                    .body(orderResponse);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @PutMapping("/{id}")
     //PUT http://localhost:8088/api/v1/orders/2
     //công việc của admin

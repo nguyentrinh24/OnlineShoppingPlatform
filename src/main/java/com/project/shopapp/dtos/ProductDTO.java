@@ -24,7 +24,7 @@ public class ProductDTO {
 
     private String thumbnail;
 
-
+    private Integer quantity;
     private Integer stock_quantity;
 
     private String description;

@@ -20,7 +20,7 @@ public class ProductRedisService implements IProductRedisService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper redisObjectMapper;
-    @Value("${spring.data.redis.use-redis-cache}")
+    @Value("${spring.data.redis.use-redis-cache}") // flag redis
     private boolean useRedisCache;
 
     private String getKeyFrom(String keyword,
