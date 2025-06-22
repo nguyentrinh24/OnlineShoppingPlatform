@@ -33,6 +33,7 @@ public class UserService implements IUserService {
     private final AuthenticationManager authenticationManager;
     private final LocalizationUtils localizationUtils;
     private final TokenRepository tokenRepository;
+
     @Override
     @Transactional
     public User createUser(UserDTO userDTO) throws Exception {
@@ -72,17 +73,14 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public String login(
-            String phoneNumber,
-            String password,
-            Long roleId
-    ) throws Exception {
+    public String login(String phoneNumber, String password, Long roleId) throws Exception {
         Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
         if(optionalUser.isEmpty()) {
             throw new DataNotFoundException(localizationUtils.getLocalizedMessage(MessageKeys.WRONG_PHONE_PASSWORD));
         }
 
         User existingUser = optionalUser.get();
+
         //check password
         if (existingUser.getFacebookAccountId() == 0
                 && existingUser.getGoogleAccountId() == 0) {
@@ -95,9 +93,11 @@ public class UserService implements IUserService {
         if(optionalRole.isEmpty() || !roleId.equals(existingUser.getRole().getId())) {
             throw new DataNotFoundException(localizationUtils.getLocalizedMessage(MessageKeys.ROLE_DOES_NOT_EXISTS));
         }
+
         if(!optionalUser.get().isActive()) {
             throw new DataNotFoundException(localizationUtils.getLocalizedMessage(MessageKeys.USER_IS_LOCKED));
         }
+
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                 phoneNumber, password,
                 existingUser.getAuthorities()
@@ -156,6 +156,8 @@ public class UserService implements IUserService {
         return userRepository.save(existingUser);
     }
 
+
+    //get user detail from token
     @Override
     public User getUserDetailsFromToken(String token) throws Exception {
         if(jwtTokenUtil.isTokenExpired(token)) {

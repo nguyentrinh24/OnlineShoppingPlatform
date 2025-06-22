@@ -1,10 +1,6 @@
 package com.project.shopapp.responses.Product;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
@@ -12,6 +8,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@Data
 @NoArgsConstructor
 public class ProductListResponse {
     private List<ProductResponse> products;

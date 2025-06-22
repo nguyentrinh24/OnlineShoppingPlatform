@@ -11,6 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
 public class OrderDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,60 +38,5 @@ public class OrderDetail {
     @Column(name = "color")
     private String color;
 
-    // Manual getters and setters since Lombok is not working
-    public Long getId() {
-        return id;
-    }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Order getOrder() {
-        return order;
-    }
-
-    public void setOrder(Order order) {
-        this.order = order;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-
-    public Float getPrice() {
-        return price;
-    }
-
-    public void setPrice(Float price) {
-        this.price = price;
-    }
-
-    public int getNumberOfProducts() {
-        return numberOfProducts;
-    }
-
-    public void setNumberOfProducts(int numberOfProducts) {
-        this.numberOfProducts = numberOfProducts;
-    }
-
-    public Float getTotalMoney() {
-        return totalMoney;
-    }
-
-    public void setTotalMoney(Float totalMoney) {
-        this.totalMoney = totalMoney;
-    }
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
-    }
 }

@@ -15,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
 public class ProductResponse extends BaseResponse {
     private Long id;
     private String name;

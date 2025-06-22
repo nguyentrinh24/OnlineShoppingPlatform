@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-
+@Data
 public class CouponCalculationResponse {
 
         @JsonProperty("result")

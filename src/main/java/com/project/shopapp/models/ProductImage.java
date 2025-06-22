@@ -12,6 +12,8 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
+
 
 public class ProductImage {
     public static final int MAXIMUM_IMAGES_PER_PRODUCT = 6;
@@ -28,28 +30,5 @@ public class ProductImage {
     @JsonProperty("image_url")
     private String imageUrl;
 
-    // Manual getters and setters since Lombok is not working
-    public Long getId() {
-        return id;
-    }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
 }

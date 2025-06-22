@@ -8,16 +8,10 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
 public class CategoryDTO {
     @NotEmpty(message = "Category's name cannot be empty")
     private String name;
 
-    // Manual getters and setters since Lombok is not working
-    public String getName() {
-        return name;
-    }
 
-    public void setName(String name) {
-        this.name = name;
-    }
 }

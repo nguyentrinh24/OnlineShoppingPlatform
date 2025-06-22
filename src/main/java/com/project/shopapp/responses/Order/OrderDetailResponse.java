@@ -9,6 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
 public class OrderDetailResponse {
     private Long id;
 

@@ -2,7 +2,9 @@ package com.project.shopapp.controllers;
 
 import com.project.shopapp.components.LocalizationUtils;
 import com.project.shopapp.dtos.*;
+import com.project.shopapp.exceptions.DataNotFoundException;
 import com.project.shopapp.models.Category;
+import com.project.shopapp.repositories.CategoryRepository;
 import com.project.shopapp.responses.Categories.CategoryResponse;
 import com.project.shopapp.responses.Categories.UpdateCategoryResponse;
 import com.project.shopapp.services.Category.CategoryService;
@@ -15,6 +17,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.LocaleResolver;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,11 +29,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CategoryController {
     private final CategoryService categoryService;
-    private final LocaleResolver localeResolver;
-    private final MessageSource messageSource;
+    private final CategoryRepository categoryRepository;
     private final LocalizationUtils localizationUtils;
 
     @PostMapping("")
+    @Transactional
     public ResponseEntity<CategoryResponse> createCategory(
             @Valid @RequestBody CategoryDTO categoryDTO,
             BindingResult result) {
@@ -49,6 +52,7 @@ public class CategoryController {
 
         Category category = categoryService.createCategory(categoryDTO);
         categoryResponse.setCategory(category);
+        categoryResponse.setMessage(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_CATEGORY_SUCCESSFULLY));
         return ResponseEntity.ok(categoryResponse);
     }
 
@@ -63,6 +67,7 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
+    @Transactional
     public ResponseEntity<UpdateCategoryResponse> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody CategoryDTO categoryDTO
@@ -73,7 +78,15 @@ public class CategoryController {
         return ResponseEntity.ok(updateCategoryResponse);
     }
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<String> deleteCategory(@PathVariable Long id) {
+        if(!categoryRepository.existsById(id)) {
+            try {
+                throw  new DataNotFoundException("Category not found");
+            } catch (DataNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
         categoryService.deleteCategory(id);
         return ResponseEntity.ok(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_CATEGORY_SUCCESSFULLY));
     }

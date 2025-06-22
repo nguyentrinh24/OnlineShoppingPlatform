@@ -1,6 +1,7 @@
 package com.project.shopapp.services.Category;
 
 import com.project.shopapp.dtos.CategoryDTO;
+import com.project.shopapp.exceptions.DataNotFoundException;
 import com.project.shopapp.models.Category;
 import com.project.shopapp.repositories.CategoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +48,15 @@ public class CategoryService implements ICategoryService {
     @Override
     @Transactional
     public void deleteCategory(long id) {
-        //xóa xong
+        // select 1 from category where categoriesID =? limit 1;
+        if (!categoryRepository.existsById(id)) {
+            try {
+                throw new DataNotFoundException("Category not found");
+            } catch (DataNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
         categoryRepository.deleteById(id);
+
     }
 }

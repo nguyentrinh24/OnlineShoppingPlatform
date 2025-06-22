@@ -20,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.bind.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +39,7 @@ public class OrderController {
     private final OrderRepository orderRepository;
 
     @PostMapping("")
+    @Transactional
     public ResponseEntity<?> createOrder(
             @Valid @RequestBody OrderDTO orderDTO,
             @RequestHeader(name = "Authorization") String authorization,
@@ -97,6 +99,7 @@ public class OrderController {
     }
 
     @PutMapping("/{id}")
+    @Transactional
     //PUT http://localhost:8088/api/v1/orders/2
     //công việc của admin
     public ResponseEntity<?> updateOrder(
@@ -117,6 +120,7 @@ public class OrderController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<?> deleteOrder(@Valid @PathVariable Long id,
                                          @RequestHeader(name = "Authorization") String authorization) {
         String token = AuthJwtToken.extractToken(authorization);

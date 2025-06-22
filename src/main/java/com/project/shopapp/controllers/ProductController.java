@@ -24,6 +24,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,6 +41,7 @@ public class ProductController {
     private final LocalizationUtils localizationUtils;
 
     @PostMapping("")
+    @Transactional
     //POST http://localhost:8088/v1/api/products
     public ResponseEntity<?> createProduct(
             @Valid @RequestBody ProductDTO productDTO,
@@ -63,6 +65,7 @@ public class ProductController {
 
     @PostMapping(value = "uploads/{id}",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Transactional
     //POST http://localhost:8088/v1/api/products
     public ResponseEntity<?> uploadImages(
             @PathVariable("id") Long productId,
@@ -209,6 +212,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<String> deleteProduct(@PathVariable long id) {
         try {
             productService.deleteProduct(id);
@@ -220,6 +224,7 @@ public class ProductController {
 
     //update a product
     @PutMapping("/{id}")
+    @Transactional
     public ResponseEntity<?> updateProduct(
             @PathVariable long id,
             @RequestBody ProductDTO productDTO) {
@@ -234,6 +239,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/images/{id}")
+    @Transactional
     public ResponseEntity<?> deleteProductImage(@PathVariable("id") Long imageId) {
         try {
             productService.deleteProductImage(imageId); // Gọi service xử lý xóa ảnh

@@ -1,14 +1,14 @@
 package com.project.shopapp.controllers;
 
-import com.project.shopapp.components.JwtTokenUtils;
+
 import com.project.shopapp.models.Token;
 import com.project.shopapp.models.User;
 import com.project.shopapp.responses.User.LoginResponse;
 import com.project.shopapp.responses.User.RegisterResponse;
 import com.project.shopapp.responses.User.UserResponse;
 import com.project.shopapp.services.Token.ITokenService;
-import com.project.shopapp.services.User.IUserService;
 import com.project.shopapp.components.LocalizationUtils;
+import com.project.shopapp.services.User.UserService;
 import com.project.shopapp.utils.MessageKeys;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -19,6 +19,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import com.project.shopapp.dtos.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +28,12 @@ import java.util.List;
 @RequestMapping("${api.prefix}/users")
 @RequiredArgsConstructor
 public class UserController {
-    private final IUserService userService;
+    private final UserService userService;
     private final LocalizationUtils localizationUtils;
     private final ITokenService tokenService;
-    private final JwtTokenUtils  jwtTokenUtils;
 
     @PostMapping("/register")
+    @Transactional
     public ResponseEntity<RegisterResponse> createUser(
             @Valid @RequestBody UserDTO userDTO,
             BindingResult result
@@ -57,6 +58,8 @@ public class UserController {
             User user = userService.createUser(userDTO);
             registerResponse.setMessage(localizationUtils.getLocalizedMessage(MessageKeys.REGISTER_SUCCESSFULLY));
             registerResponse.setUser(user);
+
+
             return ResponseEntity.ok(registerResponse);
         } catch (Exception e) {
             registerResponse.setMessage(e.getMessage());
@@ -65,6 +68,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
+    @Transactional
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody UserLoginDTO userLoginDTO,
             HttpServletRequest request
@@ -99,19 +103,24 @@ public class UserController {
         }
     }
 
+
+    //get user detail from token
     @PostMapping("/details")
     public ResponseEntity<UserResponse> getUserDetails(
             @RequestHeader("Authorization") String authorizationHeader
     ) {
         try {
-            String extractedToken = authorizationHeader.substring(7); // Loại bỏ "Bearer " từ chuỗi token
+            String extractedToken = authorizationHeader.substring(7);
             User user = userService.getUserDetailsFromToken(extractedToken);
             return ResponseEntity.ok(UserResponse.fromUser(user));
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    //update user
     @PutMapping("/details/{userId}")
+    @Transactional
     public ResponseEntity<UserResponse> updateUserDetails(
             @PathVariable Long userId,
             @RequestBody UpdateUserDTO updatedUserDTO,

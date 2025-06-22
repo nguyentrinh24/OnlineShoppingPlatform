@@ -10,6 +10,7 @@ import com.project.shopapp.utils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class OrderDetailController {
 
     // Thêm mới 1 order detail
     @PostMapping("")
+    @Transactional
     public ResponseEntity<?> createOrderDetail(
             @Valid @RequestBody OrderDetailDTO orderDetailDTO) {
         try {
@@ -51,6 +53,7 @@ public class OrderDetailController {
     }
 
     @PutMapping("/{id}")
+    @Transactional
     public ResponseEntity<?> updateOrderDetail(
             @Valid @PathVariable("id") Long id,
             @RequestBody OrderDetailDTO orderDetailDTO) {
@@ -63,6 +66,7 @@ public class OrderDetailController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<?> deleteOrderDetail(@Valid @PathVariable("id") Long id) {
         orderDetailService.deleteById(id);
         return ResponseEntity.ok()

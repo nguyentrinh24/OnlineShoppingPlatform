@@ -13,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
 public class OrderResponse {
     private Long id;
 
@@ -35,7 +36,7 @@ public class OrderResponse {
     private String note;
 
     @JsonProperty("order_date")
-    //@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private LocalDate orderDate;
 
     @JsonProperty("status")

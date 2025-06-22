@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
 public class CategoryResponse {
     @JsonProperty("message")
     private String message;
@@ -22,29 +23,6 @@ public class CategoryResponse {
     @JsonProperty("category")
     private Category category;
 
-    // Manual getters and setters since Lombok is not working
-    public String getMessage() {
-        return message;
-    }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public List<String> getErrors() {
-        return errors;
-    }
-
-    public void setErrors(List<String> errors) {
-        this.errors = errors;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
 }
 

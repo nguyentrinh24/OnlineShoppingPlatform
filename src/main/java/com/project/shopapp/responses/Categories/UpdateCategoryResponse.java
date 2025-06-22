@@ -7,16 +7,10 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
 public class UpdateCategoryResponse {
     @JsonProperty("message")
     private String message;
 
-    // Manual getters and setters since Lombok is not working
-    public String getMessage() {
-        return message;
-    }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
 }
