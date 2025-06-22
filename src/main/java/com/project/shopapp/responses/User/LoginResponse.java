@@ -17,9 +17,6 @@ public class LoginResponse {
     @JsonProperty("token")
     private String token;
 
-    @JsonProperty("refresh_token")
-    private String refreshToken;
-
     private String tokenType = "Bearer";
     //user detail
     private Long id;
@@ -42,14 +39,6 @@ public class LoginResponse {
 
     public void setToken(String token) {
         this.token = token;
-    }
-
-    public String getRefreshToken() {
-        return refreshToken;
-    }
-
-    public void setRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
     }
 
     public String getTokenType() {

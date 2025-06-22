@@ -22,7 +22,6 @@ api:
 jwt:
   secret: TaqlmGv1iEDMRiFp/pHuID1+T84IABfuA0xXh4GhiUI=
   expiration: 900            # access token (15 phút)
-  refresh-expiration: 2592000 # refresh token (30 ngày)
 
 logging:
   level:

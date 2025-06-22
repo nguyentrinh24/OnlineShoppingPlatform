@@ -157,12 +157,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User getUserDetailsFromRefreshToken(String refreshToken) throws Exception {
-        Token existingToken = tokenRepository.findByRefreshToken(refreshToken);
-        return getUserDetailsFromToken(existingToken.getToken());
-    }
-
-    @Override
     public User getUserDetailsFromToken(String token) throws Exception {
         if(jwtTokenUtil.isTokenExpired(token)) {
             throw new Exception("Token is expired");

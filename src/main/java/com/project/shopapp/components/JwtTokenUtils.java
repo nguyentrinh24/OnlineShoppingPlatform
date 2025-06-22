@@ -26,8 +26,6 @@ public class JwtTokenUtils {
     private final TokenRepository tokenRepository;
     @Value("${jwt.expiration}")
     private int expiration;
-    @Value("${jwt.refresh-expiration}")
-    private int expirationRefreshToken;
     @Value("${jwt.secret}")
     private String secretKey;
 
