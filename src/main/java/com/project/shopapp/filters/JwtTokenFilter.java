@@ -64,10 +64,7 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 }
             }
-
             filterChain.doFilter(request, response);
-
-
         }catch (Exception e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
         }
@@ -78,8 +75,8 @@ public class JwtTokenFilter extends OncePerRequestFilter{
         final List<Pair<String, String>> bypassTokens = Arrays.asList(
                 Pair.of(String.format("%s/healthcheck/health", apiPrefix), "GET"),
                 Pair.of(String.format("%s/users/register", apiPrefix), "POST"),
-                Pair.of(String.format("%s/users/login", apiPrefix), "POST"),
-                Pair.of(String.format("%s/users/refreshToken", apiPrefix), "POST")
+                Pair.of(String.format("%s/users/login", apiPrefix), "POST")
+
         );
 
         String requestPath = request.getServletPath();

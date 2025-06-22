@@ -34,7 +34,6 @@ public class WebSecurityConfig {
     @Value("${api.prefix}")
     private String apiPrefix;
     @Bean
-    //Pair.of(String.format("%s/products", apiPrefix), "GET"),
     public SecurityFilterChain securityFilterChain(HttpSecurity http)  throws Exception{
         http
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
@@ -113,7 +112,6 @@ public class WebSecurityConfig {
                                     String.format("%s/coupons/**", apiPrefix)).hasAnyRole(Role.USER, Role.ADMIN)
 
                             .anyRequest().authenticated();
-//                           .anyRequest().permitAll();
 
                 })
                 .csrf(AbstractHttpConfigurer::disable);

@@ -1,14 +1,11 @@
 package com.project.shopapp.controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.project.shopapp.Producers.MessageProducer;
 import com.project.shopapp.components.LocalizationUtils;
 import com.project.shopapp.dtos.*;
 import com.project.shopapp.models.Product;
 import com.project.shopapp.models.ProductImage;
 import com.project.shopapp.responses.Product.ProductListResponse;
 import com.project.shopapp.responses.Product.ProductResponse;
-import com.project.shopapp.services.Product.IProductRedisService;
 import com.project.shopapp.services.Product.IProductService;
 import com.project.shopapp.utils.MessageKeys;
 import lombok.RequiredArgsConstructor;
@@ -41,10 +38,6 @@ public class ProductController {
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
     private final IProductService productService;
     private final LocalizationUtils localizationUtils;
-    private final MessageProducer messageProducer;
-    private final IProductRedisService productRedisService;
-
-
 
     @PostMapping("")
     //POST http://localhost:8088/v1/api/products
@@ -62,13 +55,12 @@ public class ProductController {
             }
 
             Product newProduct = productService.createProduct(productDTO);
-            logRabbit("Created product: " + newProduct.getName());
-
             return ResponseEntity.ok(newProduct);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @PostMapping(value = "uploads/{id}",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     //POST http://localhost:8088/v1/api/products
@@ -89,48 +81,62 @@ public class ProductController {
                     continue;
                 }
                 // Kiểm tra kích thước file và định dạng
-                if(file.getSize() > 10 * 1024 * 1024) { // Kích thước > 10MB
+                if(file.getSize() > 10 * 1024 * 1024) { // > 10MB
                     return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                            .body(localizationUtils
-                                    .getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_LARGE));
+                            .body(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_LARGE));
                 }
                 String contentType = file.getContentType();
                 if(contentType == null || !contentType.startsWith("image/")) {
                     return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                             .body(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_MUST_BE_IMAGE));
                 }
-                // Lưu file và cập nhật thumbnail trong DTO
-                String filename = storeFile(file); // Thay thế hàm này với code của bạn để lưu file
+                // Lưu file và cập nhật thumbnail trong database
+                String filename = storeFile(file); // Thay đổi từ storeFiles thành storeFile
                 //lưu vào đối tượng product trong DB
                 ProductImage productImage = productService.createProductImage(
                         existingProduct.getId(),
                         ProductImageDTO.builder()
                                 .imageUrl(filename)
+                                .productId(existingProduct.getId())
                                 .build()
                 );
                 productImages.add(productImage);
-                if (existingProduct.getThumbnail() == null && !productImages.isEmpty()) {
-                    ProductDTO productDTO = ProductDTO.builder()
-                            .name(existingProduct.getName())
-                            .description(existingProduct.getDescription())
-                            .price(existingProduct.getPrice())
-                            .thumbnail(productImages.get(0).getImageUrl())
-                            .categoryId(existingProduct.getCategory().getId())
-                            .build();
-                    productService.updateProduct(existingProduct.getId(), productDTO);
-
-                }
-
             }
             return ResponseEntity.ok().body(productImages);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    private String storeFile(MultipartFile file) throws IOException {
+        if (!isImageFile(file) || file.getOriginalFilename() == null) {
+            throw new IOException("Invalid image format");
+        }
+        String filename = StringUtils.cleanPath(file.getOriginalFilename());
+        // Thêm UUID vào trước tên file để tránh trùng lặp
+        String uniqueFilename = UUID.randomUUID().toString() + "_" + filename;
+        // Đường dẫn đến thư mục mà bạn muốn lưu file
+        java.nio.file.Path uploadDir = Paths.get("uploads");
+        // Kiểm tra và tạo thư mục nếu không tồn tại
+        if (!Files.exists(uploadDir)) {
+            Files.createDirectories(uploadDir);
+        }
+        // Đường dẫn đầy đủ đến file
+        java.nio.file.Path destination = Paths.get(uploadDir.toString(), uniqueFilename);
+        // Sao chép file vào thư mục đích
+        Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
+        return uniqueFilename;
+    }
+
+    private boolean isImageFile(MultipartFile file) {
+        String contentType = file.getContentType();
+        return contentType != null && contentType.startsWith("image/");
+    }
+
     @GetMapping("/images/{imageName}")
     public ResponseEntity<?> viewImage(@PathVariable String imageName) {
         try {
-            java.nio.file.Path imagePath = Paths.get("uploads/"+imageName);
+            java.nio.file.Path imagePath = Paths.get("uploads/" + imageName);
             UrlResource resource = new UrlResource(imagePath.toUri());
 
             if (resource.exists()) {
@@ -138,39 +144,12 @@ public class ProductController {
                         .contentType(MediaType.IMAGE_JPEG)
                         .body(resource);
             } else {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.IMAGE_JPEG)
-                        .body(new UrlResource(Paths.get("uploads/notfound.jpeg").toUri()));
-                //return ResponseEntity.notFound().build();
+                return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
-    private String storeFile(MultipartFile file) throws IOException {
-        if (!isImageFile(file) || file.getOriginalFilename() == null) {
-            throw new IOException("Invalid image format");
-        }
-        String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
-
-        String uniqueFilename = UUID.randomUUID().toString() + "_" + filename;
-
-        java.nio.file.Path uploadDir = Paths.get("uploads");
-
-        if (!Files.exists(uploadDir)) {
-            Files.createDirectories(uploadDir);
-        }
-
-        java.nio.file.Path destination = Paths.get(uploadDir.toString(), uniqueFilename);
-
-        Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
-        return uniqueFilename;
-    }
-    private boolean isImageFile(MultipartFile file) {
-        String contentType = file.getContentType();
-        return contentType != null && contentType.startsWith("image/");
-    }
-
 
     @GetMapping("")
     public ResponseEntity<ProductListResponse> getProducts(
@@ -178,7 +157,7 @@ public class ProductController {
             @RequestParam(defaultValue = "0", name = "category_id") Long categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit
-    ) throws JsonProcessingException {
+    ) {
 
         PageRequest pageRequest = PageRequest.of(
                 page, limit,
@@ -186,26 +165,17 @@ public class ProductController {
         );
         logger.info("keyword = {}, category_id = {}, page = {}, limit = {}",
                 keyword, categoryId, page, limit);
-        List<ProductResponse> products = productRedisService.getAllProducts(keyword, categoryId, pageRequest);
-        int totalPages;
-        if (products != null) {
-            logger.info("Cache hit for key all_products:{}:{}:{}:{}:*", keyword, categoryId, page, limit);
-            Page<ProductResponse> pageInfo = productService.getAllProducts(keyword, categoryId, pageRequest);
-            totalPages = pageInfo.getTotalPages();
-        } else {
-            logger.info("Cache miss: fetching from DB");
-            Page<ProductResponse> pageResult = productService.getAllProducts(keyword, categoryId, pageRequest);
-            products = pageResult.getContent();
-            totalPages = pageResult.getTotalPages();
-            productRedisService.saveAllProducts(products, keyword, categoryId, pageRequest);
-        }
+        
+        Page<ProductResponse> pageResult = productService.getAllProducts(keyword, categoryId, pageRequest);
+        List<ProductResponse> products = pageResult.getContent();
+        int totalPages = pageResult.getTotalPages();
+        
         ProductListResponse response = ProductListResponse.builder()
                 .products(products)
                 .totalPages(totalPages)
                 .build();
         return ResponseEntity.ok(response);
     }
-
 
     //http://localhost:8088/api/v1/products/6
     @GetMapping("/{id}")
@@ -220,6 +190,7 @@ public class ProductController {
         }
 
     }
+
     @GetMapping("/by-ids")
     public ResponseEntity<?> getProductsByIds(@RequestParam("ids") String ids) {
         //eg: 1,3,5,7
@@ -241,36 +212,12 @@ public class ProductController {
     public ResponseEntity<String> deleteProduct(@PathVariable long id) {
         try {
             productService.deleteProduct(id);
-            logRabbit("Deleted product ID: " + id);
-
             return ResponseEntity.ok(String.format("Product with id = %d deleted successfully", id));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    //@PostMapping("/generateFakeProducts")
-//    private ResponseEntity<String> generateFakeProducts() {
-//        Faker faker = new Faker();
-//        for (int i = 0; i < 1_000_000; i++) {
-//            String productName = faker.commerce().productName();
-//            if(productService.existsByName(productName)) {
-//                continue;
-//            }
-//            ProductDTO productDTO = ProductDTO.builder()
-//                    .name(productName)
-//                    .price((float)faker.number().numberBetween(10, 90_000_000))
-//                    .description(faker.lorem().sentence())
-//                    .thumbnail("")
-//                    .categoryId((long)faker.number().numberBetween(2, 5))
-//                    .build();
-//            try {
-//                productService.createProduct(productDTO);
-//            } catch (Exception e) {
-//                return ResponseEntity.badRequest().body(e.getMessage());
-//            }
-//        }
-//        return ResponseEntity.ok("Fake Products created successfully");
-//    }
+
     //update a product
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(
@@ -278,8 +225,6 @@ public class ProductController {
             @RequestBody ProductDTO productDTO) {
         try {
             Product updatedProduct = productService.updateProduct(id, productDTO);
-            logRabbit("Updated product ID: " + id + " - " + updatedProduct.getName());
-
             return ResponseEntity.ok(updatedProduct);
         } catch (Exception e) {
             return ResponseEntity
@@ -297,13 +242,4 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-
-    private void logRabbit(String msg) {
-        try {
-            messageProducer.sendMessage(msg);
-        } catch (Exception e) {
-            logger.error("Failed to send RabbitMQ message: {}", msg);
-        }
-    }
-
 }

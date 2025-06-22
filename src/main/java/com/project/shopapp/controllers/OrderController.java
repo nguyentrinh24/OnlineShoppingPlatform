@@ -1,6 +1,5 @@
 package com.project.shopapp.controllers;
 
-import com.project.shopapp.Producers.MessageProducer;
 import com.project.shopapp.components.LocalizationUtils;
 import com.project.shopapp.dtos.*;
 import com.project.shopapp.filters.AuthJwtToken;
@@ -36,9 +35,7 @@ import java.util.Map;
 public class OrderController {
     private final IOrderService orderService;
     private final LocalizationUtils localizationUtils;
-    private final MessageProducer messageProducer;
     private final OrderRepository orderRepository;
-
 
     @PostMapping("")
     public ResponseEntity<?> createOrder(
@@ -67,7 +64,6 @@ public class OrderController {
 
             String token = AuthJwtToken.extractToken(authorization);
             Order orderResponse = orderService.createOrder(orderDTO);
-            logRabbit("Created order ID: " + orderResponse.getId() + " for user ID: " + orderResponse.getUser().getId());
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.AUTHORIZATION, "BEARER " + token)
@@ -77,34 +73,24 @@ public class OrderController {
         }
     }
 
-    @GetMapping("/user/{user_id}")
-    public ResponseEntity<?> getOrders(
-            @Valid @PathVariable("user_id") Long userId,
-            @RequestHeader(name = "Authorization") String authorization
-    ) {
+    @GetMapping("/user/{user_id}") // Thêm user_id vào path
+    public ResponseEntity<?> getOrders(@Valid @PathVariable("user_id") Long userId) {
         try {
-            String token = AuthJwtToken.extractToken(authorization);
             List<Order> orders = orderService.findByUserId(userId);
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.AUTHORIZATION, "BEARER " + token)
-                    .body(orders);
+            List<OrderResponse> orderResponses = orders.stream()
+                    .map(OrderResponse::fromOrder)
+                    .toList();
+            return ResponseEntity.ok(orderResponses);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getOrder(
-            @Valid @PathVariable("id") Long orderId,
-            @RequestHeader(name = "Authorization") String authorization
-    ) {
+    public ResponseEntity<?> getOrder(@Valid @PathVariable("id") Long orderId) {
         try {
-            String token = AuthJwtToken.extractToken(authorization);
             Order existingOrder = orderService.getOrder(orderId);
-            OrderResponse orderResponse = OrderResponse.fromOrder(existingOrder);
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.AUTHORIZATION, "BEARER " + token)
-                    .body(orderResponse);
+            return ResponseEntity.ok(OrderResponse.fromOrder(existingOrder));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -121,7 +107,6 @@ public class OrderController {
         try {
             String token = AuthJwtToken.extractToken(authorization);
             Order order = orderService.updateOrder(id, orderDTO);
-            logRabbit("Updated order ID: " + id);
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.AUTHORIZATION,"BEAER "+token)
@@ -130,13 +115,13 @@ public class OrderController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrder(@Valid @PathVariable Long id,
                                          @RequestHeader(name = "Authorization") String authorization) {
         String token = AuthJwtToken.extractToken(authorization);
         //xóa mềm => cập nhật trường active = false
         orderService.deleteOrder(id);
-        logRabbit("Deleted order ID: " + id);
 
         String result = localizationUtils.getLocalizedMessage(
                 MessageKeys.DELETE_ORDER_SUCCESSFULLY, id);
@@ -144,7 +129,6 @@ public class OrderController {
                 .header(HttpHeaders.AUTHORIZATION,"BEARER " +token)
                 .body(result);
     }
-
 
     @GetMapping("/get-orders-by-keyword")
     public ResponseEntity<OrderListResponse> getOrdersByKeyword(
@@ -178,14 +162,6 @@ public class OrderController {
                .body(orderResponse);
     }
 
-    private void logRabbit(String msg) {
-        try {
-            messageProducer.sendMessage(msg);
-        } catch (Exception e) {
-            System.err.println("RabbitMQ failed: " + msg);
-        }
-    }
-
     @GetMapping("/latest")
     public ResponseEntity<?> getLatestOrder(
             @AuthenticationPrincipal User userDetails,
@@ -212,8 +188,4 @@ public class OrderController {
                 .header(HttpHeaders.AUTHORIZATION,"BEARER " + token)
                 .body(body);
     }
-
-
-
-
 }

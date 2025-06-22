@@ -1,6 +1,5 @@
 package com.project.shopapp.controllers;
 
-import com.project.shopapp.Producers.MessageProducer;
 import com.project.shopapp.components.LocalizationUtils;
 import com.project.shopapp.dtos.OrderDetailDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
@@ -21,7 +20,6 @@ import java.util.List;
 public class OrderDetailController {
     private final OrderDetailService orderDetailService;
     private final LocalizationUtils localizationUtils;
-    private final MessageProducer messageProducer;
 
     // Thêm mới 1 order detail
     @PostMapping("")
@@ -29,8 +27,6 @@ public class OrderDetailController {
             @Valid @RequestBody OrderDetailDTO orderDetailDTO) {
         try {
             OrderDetail newOrderDetail = orderDetailService.createOrderDetail(orderDetailDTO);
-            logRabbit("Created order detail ID: " + newOrderDetail.getId()
-                    + " for order ID: " + orderDetailDTO.getOrderId());
             return ResponseEntity.ok().body(OrderDetailResponse.fromOrderDetail(newOrderDetail));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -60,7 +56,6 @@ public class OrderDetailController {
             @RequestBody OrderDetailDTO orderDetailDTO) {
         try {
             OrderDetail orderDetail = orderDetailService.updateOrderDetail(id, orderDetailDTO);
-            logRabbit("Updated order detail ID: " + id + " for order ID: " + orderDetailDTO.getOrderId());
             return ResponseEntity.ok().body(orderDetail);
         } catch (DataNotFoundException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -70,16 +65,7 @@ public class OrderDetailController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrderDetail(@Valid @PathVariable("id") Long id) {
         orderDetailService.deleteById(id);
-        logRabbit("Deleted order detail ID: " + id);
         return ResponseEntity.ok()
                 .body(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_ORDER_DETAIL_SUCCESSFULLY));
-    }
-
-    private void logRabbit(String msg) {
-        try {
-            messageProducer.sendMessage(msg);
-        } catch (Exception e) {
-            System.err.println("RabbitMQ send error: " + msg);
-        }
     }
 }

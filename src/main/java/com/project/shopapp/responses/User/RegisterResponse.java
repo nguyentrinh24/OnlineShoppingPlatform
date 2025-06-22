@@ -15,4 +15,21 @@ public class RegisterResponse {
 
     @JsonProperty("user")
     private User user;
+
+    // Manual getters and setters since Lombok is not working
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

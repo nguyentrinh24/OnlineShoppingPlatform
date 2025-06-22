@@ -7,7 +7,6 @@ import lombok.*;
 
 import java.util.Date;
 
-@Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -41,4 +40,77 @@ public class UserDTO {
     @NotNull(message = "Role ID is required")
     @JsonProperty("role_id")
     private Long roleId;
+
+    // Manual getters and setters since Lombok is not working
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getRetypePassword() {
+        return retypePassword;
+    }
+
+    public void setRetypePassword(String retypePassword) {
+        this.retypePassword = retypePassword;
+    }
+
+    public Date getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(Date dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public int getFacebookAccountId() {
+        return facebookAccountId;
+    }
+
+    public void setFacebookAccountId(int facebookAccountId) {
+        this.facebookAccountId = facebookAccountId;
+    }
+
+    public int getGoogleAccountId() {
+        return googleAccountId;
+    }
+
+    public void setGoogleAccountId(int googleAccountId) {
+        this.googleAccountId = googleAccountId;
+    }
+
+    public Long getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(Long roleId) {
+        this.roleId = roleId;
+    }
 }

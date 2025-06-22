@@ -15,7 +15,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +38,6 @@ public class UserController {
             BindingResult result
     ) {
         RegisterResponse registerResponse = new RegisterResponse();
-
         if (result.hasErrors()) {
             List<String> errorMessages = new ArrayList<>();
             for (FieldError error : result.getFieldErrors()) {
@@ -104,8 +102,6 @@ public class UserController {
     }
 
     private boolean isMobileDevice(String userAgent) {
-        // Kiểm tra User-Agent header để xác định thiết bị di động
-        // Ví dụ đơn giản:
         return userAgent.toLowerCase().contains("mobile");
     }
 

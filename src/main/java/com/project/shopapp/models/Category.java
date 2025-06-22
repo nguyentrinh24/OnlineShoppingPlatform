@@ -5,7 +5,6 @@ import lombok.*;
 
 @Entity
 @Table(name = "categories")
-@Data//toString
 @Getter
 @Setter
 @AllArgsConstructor
@@ -18,4 +17,21 @@ public class Category {
 
     @Column(name = "name", nullable = false)
     private String name;
+
+    // Manual getters and setters since Lombok is not working
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }
