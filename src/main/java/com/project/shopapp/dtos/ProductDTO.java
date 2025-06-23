@@ -12,6 +12,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
+
 public class ProductDTO {
     @NotBlank(message = "Title is required")
     @Size(min = 3, max = 200, message = "Name must be between 3 and 200 characters")
@@ -28,63 +30,7 @@ public class ProductDTO {
 
     private String description;
 
-    @JsonProperty("category_id")
+    @JsonProperty("categoryId")
     private Long categoryId;
 
-    // Manual getters and setters since Lombok is not working
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Float getPrice() {
-        return price;
-    }
-
-    public void setPrice(Float price) {
-        this.price = price;
-    }
-
-    public String getThumbnail() {
-        return thumbnail;
-    }
-
-    public void setThumbnail(String thumbnail) {
-        this.thumbnail = thumbnail;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
-    public Integer getStock_quantity() {
-        return stock_quantity;
-    }
-
-    public void setStock_quantity(Integer stock_quantity) {
-        this.stock_quantity = stock_quantity;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Long getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
-    }
 }

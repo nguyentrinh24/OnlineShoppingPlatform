@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.*;
 
 import java.io.IOException;
@@ -74,7 +75,10 @@ public class JwtTokenFilter extends OncePerRequestFilter{
     private boolean isBypassToken(@NonNull HttpServletRequest request) {
         final List<Pair<String, String>> bypassTokens = Arrays.asList(
                 Pair.of(String.format("%s/users/register", apiPrefix), "POST"),
-                Pair.of(String.format("%s/users/login", apiPrefix), "POST")
+                Pair.of(String.format("%s/users/login", apiPrefix), "POST"),
+                Pair.of(String.format("%s/products**",apiPrefix),"GET"),
+                Pair.of(String.format("%s/products/**",apiPrefix),"GET")
+
 
         );
 
@@ -83,12 +87,14 @@ public class JwtTokenFilter extends OncePerRequestFilter{
 
         log.debug("isBypass? path={} method={} tokens={}", requestPath, requestMethod, bypassTokens);
 
+        AntPathMatcher matcher = new AntPathMatcher(); // so sánh khớp pattern
         for (Pair<String, String> bypassToken : bypassTokens) {
-            if (requestPath.contains(bypassToken.getFirst())
+            if (matcher.match(bypassToken.getFirst(), requestPath)
                     && requestMethod.equals(bypassToken.getSecond())) {
                 return true;
             }
         }
+
 
         return false;
     }

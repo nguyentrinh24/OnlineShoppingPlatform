@@ -1,11 +1,14 @@
 package com.project.shopapp.controllers;
 
+import com.github.javafaker.Faker;
 import com.project.shopapp.components.LocalizationUtils;
 import com.project.shopapp.dtos.*;
+import com.project.shopapp.models.Category;
 import com.project.shopapp.models.Product;
 import com.project.shopapp.models.ProductImage;
 import com.project.shopapp.responses.Product.ProductListResponse;
 import com.project.shopapp.responses.Product.ProductResponse;
+import com.project.shopapp.services.Category.CategoryService;
 import com.project.shopapp.services.Product.IProductService;
 import com.project.shopapp.utils.MessageKeys;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +42,7 @@ public class ProductController {
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
     private final IProductService productService;
     private final LocalizationUtils localizationUtils;
+    private final CategoryService categoryService;
 
     @PostMapping("")
     @Transactional
@@ -62,6 +66,101 @@ public class ProductController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+
+    @GetMapping("")
+    public ResponseEntity<ProductListResponse> getProducts(
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "0", name = "category_id") Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+
+        PageRequest pageRequest = PageRequest.of(
+                page, limit,
+                Sort.by("id").ascending()
+        );
+
+        Page<ProductResponse> pageResult = productService.getAllProducts(keyword, categoryId, pageRequest);
+        List<ProductResponse> products = pageResult.getContent();
+        int totalPages = pageResult.getTotalPages();
+
+        ProductListResponse response = ProductListResponse.builder()
+                .products(products)
+                .totalPages(totalPages)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    //http://localhost:8088/api/v1/products/6
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getProductById(
+            @PathVariable("id") Long productId
+    ) {
+        try {
+            Product existingProduct = productService.getProductById(productId);
+            return ResponseEntity.ok(ProductResponse.fromProduct(existingProduct));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+
+    }
+
+    @GetMapping("/by-ids")
+    public ResponseEntity<?> getProductsByIds(@RequestParam("ids") String ids) {
+        //eg: 1,3,5,7
+        try {
+            // Tách chuỗi ids thành một mảng các số nguyên
+            List<Long> productIds = new ArrayList<>();
+            for (String idStr : ids.split(",")) {
+                productIds.add(Long.parseLong(idStr));
+            }
+
+            List<Product> products = productService.findProductsByIds(productIds);
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<String> deleteProduct(@PathVariable long id) {
+        try {
+            productService.deleteProduct(id);
+            return ResponseEntity.ok(String.format("Product with id = %d deleted successfully", id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    //update a product
+    @PutMapping("/{id}")
+    @Transactional
+    public ResponseEntity<?> updateProduct(
+            @PathVariable long id,
+            @RequestBody ProductDTO productDTO) {
+        try {
+            Product updatedProduct = productService.updateProduct(id, productDTO);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/images/{id}")
+    @Transactional
+    public ResponseEntity<?> deleteProductImage(@PathVariable("id") Long imageId) {
+        try {
+            productService.deleteProductImage(imageId); // Gọi service xử lý xóa ảnh
+            return ResponseEntity.ok("Image deleted successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
 
     @PostMapping(value = "uploads/{id}",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -154,98 +253,33 @@ public class ProductController {
         }
     }
 
-    @GetMapping("")
-    public ResponseEntity<ProductListResponse> getProducts(
-            @RequestParam(defaultValue = "") String keyword,
-            @RequestParam(defaultValue = "0", name = "category_id") Long categoryId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int limit
-    ) {
 
-        PageRequest pageRequest = PageRequest.of(
-                page, limit,
-                Sort.by("id").ascending()
-        );
-        logger.info("keyword = {}, category_id = {}, page = {}, limit = {}",
-                keyword, categoryId, page, limit);
-        
-        Page<ProductResponse> pageResult = productService.getAllProducts(keyword, categoryId, pageRequest);
-        List<ProductResponse> products = pageResult.getContent();
-        int totalPages = pageResult.getTotalPages();
-        
-        ProductListResponse response = ProductListResponse.builder()
-                .products(products)
-                .totalPages(totalPages)
-                .build();
-        return ResponseEntity.ok(response);
-    }
+    // fake date
+//    @PostMapping("/generate-fake")
+//    @Transactional
+//    public ResponseEntity<?> generateFakeProducts(@RequestParam(defaultValue = "10") int count) {
+//        try {
+//
+//            Faker faker = new Faker();
+//            List<Product> createdProducts = new ArrayList<>();
+//            for (int i = 0; i < count; i++) {
+//                Long randomCategoryId = faker.number().numberBetween(1L, 5L);
+//                ProductDTO productDTO = ProductDTO.builder()
+//                        .name(faker.commerce().productName())
+//                        .price(Float.valueOf(faker.commerce().price().replace(",", ".")))
+//                        .description(faker.lorem().sentence())
+//                        .thumbnail("https://placehold.co/300x300")
+//                        .quantity(faker.number().numberBetween(10, 1000))
+//                        .stock_quantity(faker.number().numberBetween(10, 1000))
+//                        .categoryId(randomCategoryId)
+//                        .build();
+//                Product product = productService.createProduct(productDTO);
+//                createdProducts.add(product);
+//            }
+//            return ResponseEntity.ok(createdProducts);
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
 
-    //http://localhost:8088/api/v1/products/6
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getProductById(
-            @PathVariable("id") Long productId
-    ) {
-        try {
-            Product existingProduct = productService.getProductById(productId);
-            return ResponseEntity.ok(ProductResponse.fromProduct(existingProduct));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-
-    }
-
-    @GetMapping("/by-ids")
-    public ResponseEntity<?> getProductsByIds(@RequestParam("ids") String ids) {
-        //eg: 1,3,5,7
-        try {
-            // Tách chuỗi ids thành một mảng các số nguyên
-            List<Long> productIds = new ArrayList<>();
-            for (String idStr : ids.split(",")) {
-                productIds.add(Long.parseLong(idStr));
-            }
-
-            List<Product> products = productService.findProductsByIds(productIds);
-            return ResponseEntity.ok(products);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @DeleteMapping("/{id}")
-    @Transactional
-    public ResponseEntity<String> deleteProduct(@PathVariable long id) {
-        try {
-            productService.deleteProduct(id);
-            return ResponseEntity.ok(String.format("Product with id = %d deleted successfully", id));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    //update a product
-    @PutMapping("/{id}")
-    @Transactional
-    public ResponseEntity<?> updateProduct(
-            @PathVariable long id,
-            @RequestBody ProductDTO productDTO) {
-        try {
-            Product updatedProduct = productService.updateProduct(id, productDTO);
-            return ResponseEntity.ok(updatedProduct);
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @DeleteMapping("/images/{id}")
-    @Transactional
-    public ResponseEntity<?> deleteProductImage(@PathVariable("id") Long imageId) {
-        try {
-            productService.deleteProductImage(imageId); // Gọi service xử lý xóa ảnh
-            return ResponseEntity.ok("Image deleted successfully.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
 }
